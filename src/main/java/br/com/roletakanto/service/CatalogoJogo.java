@@ -22,7 +22,6 @@ import br.com.roletakanto.model.item.Radar;
 import br.com.roletakanto.model.item.Reviver;
 import br.com.roletakanto.model.item.SuperPocao;
 
-/** Fonte Ãºnica dos dados fixos da primeira versÃ£o de Roleta Kanto. */
 public final class CatalogoJogo {
   public static final String ID_POCAO = "pocao";
   public static final String ID_SUPER_POCAO = "super_pocao";
@@ -38,7 +37,7 @@ public final class CatalogoJogo {
   private static final int PESO_RADAR = 10;
   private static final int PESO_EVENTO = 10;
 
-  /** Retorna as 15 espÃ©cies capturÃ¡veis e as 8 exclusivas dos lÃ­deres. */
+  /** Retorna as 15 espécies capturáveis e as 8 exclusivas dos líderes. */
   public Map<String, EspeciePokemon> carregarEspecies() {
     Map<String, EspeciePokemon> especies = new LinkedHashMap<>();
 
@@ -71,10 +70,10 @@ public final class CatalogoJogo {
     return Map.copyOf(especies);
   }
 
-  /** Cria as quatro Ã¡reas na ordem da campanha, todas com dois giros iniciais. */
+  /** Cria as quatro ÃƒÂ¡reas na ordem da campanha, todas com dois giros iniciais. */
   public List<Rota> criarRotas(Random random) {
     if (random == null) {
-      throw new IllegalArgumentException("O gerador aleatorio é obrigatorio.");
+      throw new IllegalArgumentException("O gerador aleatorio Ã© obrigatorio.");
     }
 
     List<Rota> rotas =
@@ -87,18 +86,18 @@ public final class CatalogoJogo {
     return rotas;
   }
 
-  /** Cria os quatro lÃ­deres e suas equipes fixas. */
+  /** Cria os quatro lÃƒÂ­deres e suas equipes fixas. */
   public List<LiderGinasio> criarLideres() {
     Map<String, EspeciePokemon> especies = carregarEspecies();
     return List.of(
-        lider("brock", "Brock", especies, "pedra", "Insi­gnia Pedra", "geodude", "onix"),
-        lider("misty", "Misty", especies, "cascata", "Insi­gnia Cascata", "staryu", "starmie"),
+        lider("brock", "Brock", especies, "pedra", "InsiÂ­gnia Pedra", "geodude", "onix"),
+        lider("misty", "Misty", especies, "cascata", "InsiÂ­gnia Cascata", "staryu", "starmie"),
         lider(
             "lt_surge",
             "Lt. Surge",
             especies,
             "trovao",
-            "Insignia Trovão",
+            "Insignia TrovÃ£o",
             "voltorb",
             "pikachu",
             "raichu"),
@@ -113,11 +112,11 @@ public final class CatalogoJogo {
             "gloom"));
   }
 
-  /** Cria os cinco itens disponÃ­veis na primeira versÃ£o. */
+  /** Cria os cinco itens disponÃƒÂ­veis na primeira versÃƒÂ£o. */
   public List<Item> criarItens() {
     return List.of(
-        new Pocao(ID_POCAO, "Poção"),
-        new SuperPocao(ID_SUPER_POCAO, "Super poção"),
+        new Pocao(ID_POCAO, "PoÃ§Ã£o"),
+        new SuperPocao(ID_SUPER_POCAO, "Super poÃ§Ã£o"),
         new Reviver(ID_REVIVER, "Reviver"),
         new Radar(ID_RADAR, "Radar"),
         new PokebolaDourada(ID_POKEBOLA_DOURADA, "Pokebola Dourada"));
@@ -129,11 +128,11 @@ public final class CatalogoJogo {
       throw new IllegalStateException("O catalogo deve conter 23 especies.");
     }
     if (criarItens().stream().map(Item::getId).distinct().count() != 5) {
-      throw new IllegalStateException("Os itens devem possuir IDs únicos.");
+      throw new IllegalStateException("Os itens devem possuir IDs Ãºnicos.");
     }
     List<Rota> rotas = criarRotas(new Random(0));
     if (rotas.size() != 4 || criarLideres().size() != 4) {
-      throw new IllegalStateException("A campanha deve possuir quatro rotas e quatro lí­deres.");
+      throw new IllegalStateException("A campanha deve possuir quatro rotas e quatro lÃ­Â­deres.");
     }
     validarPesosDasRotas(rotas);
   }
@@ -155,7 +154,7 @@ public final class CatalogoJogo {
   private Golpe golpeEspecial(TipoPokemon tipo) {
     return switch (tipo) {
       case FOGO -> new Golpe("ataque_fogo", "Ataque de Fogo", tipo, 20, 3);
-      case AGUA -> new Golpe("ataque_agua", "Ataque de água", tipo, 20, 3);
+      case AGUA -> new Golpe("ataque_agua", "Ataque de Ã¡gua", tipo, 20, 3);
       case PLANTA -> new Golpe("ataque_planta", "Ataque de Planta", tipo, 20, 3);
       case ELETRICO -> new Golpe("ataque_eletrico", "Ataque Eletrico", tipo, 20, 3);
       case ROCHA -> new Golpe("ataque_rocha", "Ataque de Rocha", tipo, 20, 3);
@@ -181,7 +180,7 @@ public final class CatalogoJogo {
     segmentos.add(
         new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_POKEBOLA_DOURADA, PESO_POKEBOLA_DOURADA));
     segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_RADAR, PESO_RADAR));
-    // O serviÃ§o que aplicar o resultado escolherÃ¡ CENTRO, RECOMPENSA ou CAMINHO_VAZIO em partes
+    // O serviÃƒÂ§o que aplicar o resultado escolherÃƒÂ¡ CENTRO, RECOMPENSA ou CAMINHO_VAZIO em partes
     // iguais.
     segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.EVENTO, "evento", PESO_EVENTO));
     return new Rota(id, nome, new Roleta(segmentos, random), idLider);
@@ -198,7 +197,7 @@ public final class CatalogoJogo {
     for (String idEspecie : idsDaEquipe) {
       EspeciePokemon especie = especies.get(idEspecie);
       if (especie == null) {
-        throw new IllegalStateException("Especie inexistente para li­der: " + idEspecie);
+        throw new IllegalStateException("Especie inexistente para liÂ­der: " + idEspecie);
       }
       equipe.add(especie);
     }

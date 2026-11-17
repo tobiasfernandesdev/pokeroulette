@@ -6,7 +6,7 @@ import java.util.List;
 import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.SeletorAcaoIA;
 
-/** Motor de combate; as regras detalhadas serÃ£o implementadas neste ponto. */
+/** Motor de combate; as regras detalhadas serã o implementadas neste ponto. */
 public final class Batalha implements Serializable {
   private final Jogador jogador;
   private final LiderGinasio lider;

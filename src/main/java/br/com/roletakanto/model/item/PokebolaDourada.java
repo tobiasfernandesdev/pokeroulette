@@ -11,6 +11,14 @@ public final class PokebolaDourada extends Item {
   }
 
   public ResultadoUsoItem usar(ContextoUsoItem contexto) {
-    return new ResultadoUsoItem(true, "TODO: giro bônus concedido");
+    if (contexto == null || contexto.partida() == null) {
+      return new ResultadoUsoItem(false, "Partida invalida para conceder giro bonus.");
+    }
+
+    if (!contexto.partida().getRotaAtual().concederGiroBonus()) {
+      return new ResultadoUsoItem(false, "A rota ja possui o maximo de tres giros.");
+    }
+
+    return new ResultadoUsoItem(true, "Giro bonus concedido.");
   }
 }
