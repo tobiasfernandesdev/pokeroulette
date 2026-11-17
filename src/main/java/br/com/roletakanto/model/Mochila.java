@@ -1,36 +1,70 @@
 package br.com.roletakanto.model;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-/** Invent√°rio de itens por pilha. */
 public final class Mochila implements Serializable {
-  private final Map<String, PilhaItem> pilhas = new LinkedHashMap<>();
+    private static final int CAPACIDADE_TIPOS = 5; // M·ximo de 5 tipos diferentes de itens
+    private final List<PilhaItem> pilhas = new ArrayList<>();
 
-  public boolean adicionar(Item item, int quantidade) {
-    if (item == null || quantidade <= 0) return false;
-    PilhaItem p = pilhas.computeIfAbsent(item.getId(), x -> new PilhaItem(item, 0));
-    return p.adicionar(quantidade) > 0;
-  }
+    public List<PilhaItem> listar() {
+        return Collections.unmodifiableList(pilhas);
+    }
 
-  public boolean remover(String id, int quantidade) {
-    PilhaItem p = pilhas.get(id);
-    if (p == null || !p.remover(quantidade)) return false;
-    if (p.getQuantidade() == 0) pilhas.remove(id);
-    return true;
-  }
+    public int contarTipos() {
+        return pilhas.size();
+    }
 
-  public Item obter(String id) {
-    PilhaItem p = pilhas.get(id);
-    return p == null ? null : p.getItem();
-  }
+    public PilhaItem obterPilhaPorId(String idItem) {
+        return pilhas.stream()
+                .filter(p -> p.getItem().getId().equals(idItem))
+                .findFirst()
+                .orElse(null);
+    }
 
-  public List<Item> listar() {
-    return pilhas.values().stream().map(PilhaItem::getItem).toList();
-  }
+    // Verifica se pode adicionar uma quantidade do item
+    public boolean podeAdicionar(Item item, int quantidade) {
+        PilhaItem pilha = obterPilhaPorId(item.getId());
+        if (pilha != null) {
+            // Se j· existe uma pilha, verifica se cabe na pilha existente (limite de 5 por item)
+            int livreNaPilha = item.getLimitePilha() - pilha.getQuantidade();
+            return quantidade <= livreNaPilha;
+        } else {
+            // Se n„o existe, precisa ter espaÁo para um novo tipo de item (m·ximo 5 tipos)
+            return pilhas.size() < CAPACIDADE_TIPOS && quantidade <= item.getLimitePilha();
+        }
+    }
 
-  public boolean temQuantidade(String id, int quantidade) {
-    PilhaItem p = pilhas.get(id);
-    return p != null && p.getQuantidade() >= quantidade;
-  }
+    // Adiciona o item respeitando os limites de tipos e quantidade por pilha
+    public boolean adicionar(Item item, int quantidade) {
+        if (!podeAdicionar(item, quantidade)) {
+            return false;
+        }
+
+        PilhaItem pilha = obterPilhaPorId(item.getId());
+        if (pilha != null) {
+            pilha.adicionar(quantidade);
+        } else {
+            pilhas.add(new PilhaItem(item, quantidade));
+        }
+        return true;
+    }
+
+    public boolean remover(String idItem, int quantidade) {
+        PilhaItem pilha = obterPilhaPorId(idItem);
+        if (pilha != null && pilha.remover(quantidade)) {
+            if (pilha.getQuantidade() == 0) {
+                pilhas.remove(pilha); // Remove o tipo de item da mochila se a quantidade zerar
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean temQuantidade(String idItem, int quantidade) {
+        PilhaItem pilha = obterPilhaPorId(idItem);
+        return pilha != null && pilha.getQuantidade() >= quantidade;
+    }
 }

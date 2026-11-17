@@ -6,11 +6,11 @@ import java.io.Serializable;
 public abstract class Item implements Serializable {
   private final String id, nome;
   private final int limitePilha;
-
-  protected Item(String id, String nome, int limitePilha) {
+  
+  protected Item(String id, String nome) {
     this.id = id;
     this.nome = nome;
-    this.limitePilha = limitePilha;
+    this.limitePilha = 5;
   }
 
   public abstract ResultadoUsoItem usar(ContextoUsoItem contexto);

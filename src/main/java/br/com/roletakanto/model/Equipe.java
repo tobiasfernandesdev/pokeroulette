@@ -57,4 +57,13 @@ public final class Equipe implements Serializable {
   public boolean estaCheia() {
     return membros.size() >= CAPACIDADE;
   }
+
+  public Pokemon transferir(String id, Reserva reserva) {
+    Pokemon pokemon = obterPorId(id);
+    if (pokemon != null && reserva.adicionar(pokemon)) {
+      remover(id);
+      return pokemon;
+    }
+    return null;
+  }
 }

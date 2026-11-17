@@ -1,8 +1,10 @@
 package br.com.roletakanto.model;
 
-import br.com.roletakanto.service.*;
 import java.io.Serializable;
 import java.util.List;
+
+import br.com.roletakanto.service.CalculadoraDano;
+import br.com.roletakanto.service.SeletorAcaoIA;
 
 /** Motor de combate; as regras detalhadas ser√£o implementadas neste ponto. */
 public final class Batalha implements Serializable {
@@ -20,7 +22,7 @@ public final class Batalha implements Serializable {
   }
 
   public ResultadoTurno executarAcao(AcaoBatalha acao) {
-    return new ResultadoTurno(List.of("TODO: resolver a√ß√£o"), ResultadoBatalha.EM_ANDAMENTO, null);
+    return new ResultadoTurno(List.of("TODO: resolver aÁ„o"), ResultadoBatalha.EM_ANDAMENTO, null);
   }
 
   public boolean podeTrocar(Pokemon pokemon) {

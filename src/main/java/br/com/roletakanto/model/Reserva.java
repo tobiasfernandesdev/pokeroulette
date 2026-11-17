@@ -45,7 +45,9 @@ public final class Reserva implements Serializable {
     Pokemon pokemon = obterPorId(id);
     if (pokemon != null && equipe.adicionar(pokemon)) {
       remover(id);
+      return pokemon;
+    }else{
+      return null;
     }
-    return pokemon;
   }
 }
