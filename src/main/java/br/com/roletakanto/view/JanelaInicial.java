@@ -3,6 +3,7 @@ package br.com.roletakanto.view;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -14,7 +15,7 @@ public final class JanelaInicial {
   private final JFrame janela;
 
   public JanelaInicial() {
-    janela = new JFrame("Roleta Kanto");
+    janela = new JFrame("PokeRoullete");
     janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     janela.setSize(640, 420);
     janela.setLocationRelativeTo(null);
@@ -26,7 +27,7 @@ public final class JanelaInicial {
     painel.setBackground(new Color(24, 52, 74));
     painel.setBorder(BorderFactory.createEmptyBorder(36, 36, 36, 36));
 
-    JLabel titulo = new JLabel("Roleta Kanto", SwingConstants.CENTER);
+    JLabel titulo = new JLabel("PokeRoullete", SwingConstants.CENTER);
     titulo.setForeground(Color.WHITE);
     titulo.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
 
