@@ -1,4 +1,52 @@
 package br.com.roletakanto.model;
+
 import java.io.Serializable;
+
 /** Área de roleta associada ao próximo líder. */
-public final class Rota implements Serializable { private final String id,nome,idLider; private final Roleta roleta; private int girosRestantes=2; public Rota(String id,String nome,Roleta roleta,String idLider){this.id=id;this.nome=nome;this.roleta=roleta;this.idLider=idLider;} public String getId(){return id;} public String getNome(){return nome;} public String getIdLider(){return idLider;} public Roleta getRoleta(){return roleta;} public boolean temGiroDisponivel(){return girosRestantes>0;} public int registrarGiro(){if(!temGiroDisponivel())return -1;return --girosRestantes;} public boolean concederGiroBonus(){if(girosRestantes>=3)return false;girosRestantes++;return true;} public int getGirosRestantes(){return girosRestantes;} }
+public final class Rota implements Serializable {
+  private final String id, nome, idLider;
+  private final Roleta roleta;
+  private int girosRestantes = 2;
+
+  public Rota(String id, String nome, Roleta roleta, String idLider) {
+    this.id = id;
+    this.nome = nome;
+    this.roleta = roleta;
+    this.idLider = idLider;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getNome() {
+    return nome;
+  }
+
+  public String getIdLider() {
+    return idLider;
+  }
+
+  public Roleta getRoleta() {
+    return roleta;
+  }
+
+  public boolean temGiroDisponivel() {
+    return girosRestantes > 0;
+  }
+
+  public int registrarGiro() {
+    if (!temGiroDisponivel()) return -1;
+    return --girosRestantes;
+  }
+
+  public boolean concederGiroBonus() {
+    if (girosRestantes >= 3) return false;
+    girosRestantes++;
+    return true;
+  }
+
+  public int getGirosRestantes() {
+    return girosRestantes;
+  }
+}

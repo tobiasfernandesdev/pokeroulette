@@ -1,4 +1,21 @@
 package br.com.roletakanto.view;
-import br.com.roletakanto.model.ResultadoRoleta; import javax.swing.*; import java.awt.*;
+
+import br.com.roletakanto.model.ResultadoRoleta;
+import java.awt.*;
+import javax.swing.*;
+
 /** Componente exclusivo de desenho da roleta. */
-public final class DesenhadorRoleta extends JComponent { public void definirAngulo(double graus){repaint();} public void definirResultado(ResultadoRoleta resultado){repaint();} @Override protected void paintComponent(Graphics g){super.paintComponent(g);/* TODO */} }
+public final class DesenhadorRoleta extends JComponent {
+  public void definirAngulo(double graus) {
+    repaint();
+  }
+
+  public void definirResultado(ResultadoRoleta resultado) {
+    repaint();
+  }
+
+  @Override
+  protected void paintComponent(Graphics g) {
+    super.paintComponent(g); /* TODO */
+  }
+}
