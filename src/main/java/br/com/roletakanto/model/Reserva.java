@@ -1,11 +1,12 @@
 package br.com.roletakanto.model;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Armazena até oito Pokémon fora da equipe. */
 public final class Reserva implements Serializable {
-  private static final int CAPACIDADE = 8;
+  private static final int CAPACIDADE = 6;
   private final List<Pokemon> membros = new ArrayList<>();
 
   public boolean adicionar(Pokemon pokemon) {
@@ -39,5 +40,12 @@ public final class Reserva implements Serializable {
 
   public int contarAptos() {
     return (int) membros.stream().filter(Pokemon::estaApto).count();
+  }
+  public Pokemon transferir(String id, Equipe equipe) {
+    Pokemon pokemon = obterPorId(id);
+    if (pokemon != null && equipe.adicionar(pokemon)) {
+      remover(id);
+    }
+    return pokemon;
   }
 }

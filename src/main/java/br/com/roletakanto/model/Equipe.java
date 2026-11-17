@@ -1,7 +1,9 @@
 package br.com.roletakanto.model;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** Até três Pokémon ativos. */
 public final class Equipe implements Serializable {

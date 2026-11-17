@@ -65,6 +65,6 @@ public final class Partida implements Serializable {
   }
 
   public void validarEstado() {
-    /* TODO */
+      
   }
 }

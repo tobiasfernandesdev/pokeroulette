@@ -19,13 +19,14 @@ public final class EspeciePokemon implements Serializable {
       int defesa,
       int velocidade,
       List<Golpe> golpes) {
+    
     this.id = id;
     this.nome = nome;
     this.tipo = tipo;
-    this.hpMaximo = hpMaximo;
-    this.ataque = ataque;
-    this.defesa = defesa;
-    this.velocidade = velocidade;
+    this.hpMaximo = Math.max(0, hpMaximo);
+    this.ataque = Math.max(0, ataque);
+    this.defesa = Math.max(0, defesa);
+    this.velocidade = Math.max(0, velocidade);
     this.golpes = List.copyOf(golpes);
   }
 
