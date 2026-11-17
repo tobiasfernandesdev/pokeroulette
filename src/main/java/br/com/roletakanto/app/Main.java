@@ -12,5 +12,6 @@ public final class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new JanelaInicial().mostrar());
         System.out.println("hello world");
+        System.out.println("Ola Brasil");
     }
 }
