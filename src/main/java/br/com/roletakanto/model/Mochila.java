@@ -1,0 +1,4 @@
+package br.com.roletakanto.model;
+import java.io.Serializable; import java.util.*;
+/** Inventário de itens por pilha. */
+public final class Mochila implements Serializable { private final Map<String,PilhaItem> pilhas=new LinkedHashMap<>(); public boolean adicionar(Item item,int quantidade){if(item==null||quantidade<=0)return false;PilhaItem p=pilhas.computeIfAbsent(item.getId(),x->new PilhaItem(item,0));return p.adicionar(quantidade)>0;} public boolean remover(String id,int quantidade){PilhaItem p=pilhas.get(id);if(p==null||!p.remover(quantidade))return false;if(p.getQuantidade()==0)pilhas.remove(id);return true;} public Item obter(String id){PilhaItem p=pilhas.get(id);return p==null?null:p.getItem();} public List<Item> listar(){return pilhas.values().stream().map(PilhaItem::getItem).toList();} public boolean temQuantidade(String id,int quantidade){PilhaItem p=pilhas.get(id);return p!=null&&p.getQuantidade()>=quantidade;} }
