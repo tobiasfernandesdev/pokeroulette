@@ -1,11 +1,13 @@
 package br.com.roletakanto.model.item;
 
-import br.com.roletakanto.model.*;
+import br.com.roletakanto.model.ContextoUsoItem;
+import br.com.roletakanto.model.Item;
+import br.com.roletakanto.model.ResultadoUsoItem;
 
 /** Cura 25 HP de um Pokémon apto. */
 public final class Pocao extends Item {
-  public Pocao(String id, String nome, int limitePilha) {
-    super(id, nome, limitePilha);
+  public Pocao(String id, String nome) {
+    super(id, nome);
   }
 
   public ResultadoUsoItem usar(ContextoUsoItem contexto) {
