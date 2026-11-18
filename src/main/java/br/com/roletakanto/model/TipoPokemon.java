@@ -6,5 +6,6 @@ public enum TipoPokemon {
   PLANTA,
   ELETRICO,
   ROCHA,
-  NORMAL
+  NORMAL,
+  VOADOR
 }
