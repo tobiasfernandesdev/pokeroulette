@@ -1,14 +1,65 @@
 package br.com.roletakanto.service;
 
-import br.com.roletakanto.model.*;
+import  java.util.Comparator;
+import java.util.List;
 
-/** Estratégia inicial simples da IA. */
-public final class SeletorAcaoIA {
-  public AcaoBatalha escolher(Batalha batalha) {
-    return AcaoBatalha.desistir();
-  }
+import br.com.roletakanto.model.AcaoBatalha;
+import br.com.roletakanto.model.Batalha;
+import br.com.roletakanto.model.Golpe;
+import br.com.roletakanto.model.Pokemon;
 
-  public Golpe escolherGolpe(Pokemon atacante, Pokemon defensor) {
-    return atacante.getEspecie().getGolpes().get(0);
-  }
+public final class SeletorAcaoIA{
+
+    private final CalculadoraDano calculadora;
+
+    public SeletorAcaoIA(){
+        this.calculadora = new CalculadoraDano();
+    }
+
+    public SeletorAcaoIA(CalculadoraDano calculadora) {
+        this.calculadora = calculadora;
+    }
+
+    public AcaoBatalha escolher(Batalha batalha) {
+        if(batalha == null) {
+            return AcaoBatalha.desistir();
+        }
+
+        Pokemon ativoIA = batalha.getAtivoLider();
+        Pokemon ativoJogador = batalha.obterAtivoJogador();
+        
+        if(ativoIA == null || !ativoIA.estaApto()) {
+            return batalha.getEquipeLider().stream()
+            .filter(Pokemon::estaApto)
+            .findFirst()
+            .map(pokemon -> AcaoBatalha.troca(pokemon.getId()))
+            .orElse(AcaoBatalha.desistir());
+        }
+
+        Golpe golpeEscolhido = escolherGolpe(ativoIA, ativoJogador);
+        if (golpeEscolhido == null) {
+            return AcaoBatalha.desistir();
+        }
+
+        return AcaoBatalha.golpe(golpeEscolhido.getId());
+    }
+
+    public Golpe escolherGolpe(Pokemon ataPokemon, Pokemon defPokemon) {
+        if(ataPokemon == null || ataPokemon.getEspecie() == null) {
+            return null;
+        }
+
+        List<Golpe> golpes = ataPokemon.getEspecie().getGolpes();
+        if(golpes == null || golpes.isEmpty()) {
+            return null;
+        }
+
+        if(defPokemon == null) {
+            return golpes.get(0);
+        }
+
+        return golpes.stream()
+        .max(Comparator.comparingInt(golpe->calculadora.calcular(ataPokemon, defPokemon, golpe)))
+        .orElse(golpes.get(0));
+    }
 }
