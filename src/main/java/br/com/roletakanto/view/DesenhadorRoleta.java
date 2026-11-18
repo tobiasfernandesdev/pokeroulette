@@ -1,11 +1,15 @@
 package br.com.roletakanto.view;
 
-import br.com.roletakanto.model.ResultadoRoleta;
-import java.awt.*;
-import javax.swing.*;
+import java.awt.Graphics;
 
-/** Componente exclusivo de desenho da roleta. */
+import javax.swing.JComponent;
+
+import br.com.roletakanto.model.ResultadoRoleta;
+
+/** Área preparada para desenhar a roleta e exibir o resultado recebido do jogo. */
 public final class DesenhadorRoleta extends JComponent {
+  private static final long serialVersionUID = 1L;
+
   public void definirAngulo(double graus) {
     repaint();
   }

@@ -8,7 +8,7 @@ Roleta Kanto é um projeto acadêmico de jogo 2D em Java Swing, inspirado na pri
 - Uma IDE com suporte a projetos Maven, como IntelliJ IDEA, Eclipse, Visual Studio Code ou Apache NetBeans
 - Maven instalado para compilar e executar pelo terminal. As IDEs citadas também podem usar a integração Maven incluída nelas.
 
-O projeto usa apenas Java SE e Swing, sem bibliotecas externas de aplicação.
+As telas usam Swing. O Maven baixa os módulos do JavaFX usados para reproduzir o MP4 do menu.
 
 ## Abrir em uma IDE
 
@@ -24,6 +24,8 @@ Configure o projeto para usar um JDK 17 ou superior. A classe inicial é `br.com
 ## Executar
 
 Na IDE, execute a classe `Main`. A janela inicial simples confirma que o projeto foi importado e iniciado; ela não representa o jogo completo.
+
+Para testar o menu com o vídeo, execute `br.com.roletakanto.view.TestePainelMenu` com o projeto Maven importado na IDE.
 
 Com Maven instalado, também é possível compilar e executar o JAR pelo terminal:
 
