@@ -70,7 +70,6 @@ public final class CatalogoJogo {
     return Map.copyOf(especies);
   }
 
-  /** Cria as quatro ÃƒÂ¡reas na ordem da campanha, todas com dois giros iniciais. */
   public List<Rota> criarRotas(Random random) {
     if (random == null) {
       throw new IllegalArgumentException("O gerador aleatorio Ã© obrigatorio.");
@@ -112,7 +111,6 @@ public final class CatalogoJogo {
             "gloom"));
   }
 
-  /** Cria os cinco itens disponÃƒÂ­veis na primeira versÃƒÂ£o. */
   public List<Item> criarItens() {
     return List.of(
         new Pocao(ID_POCAO, "PoÃ§Ã£o"),
