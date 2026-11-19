@@ -141,10 +141,6 @@ public final class ControladorPartida {
     return "Equipe, reserva e mochila cheias. " + nomePokemon + " nao foi recebido.";
   }
 
-  public void usarRadar() {
-    /* Etapa posterior. */
-  }
-
   /** Usa uma Pokebola Dourada para conceder um giro, ate o limite de tres. */
   public String usarGiroBonus() {
     if (partida == null) {

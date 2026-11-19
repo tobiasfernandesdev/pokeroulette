@@ -18,7 +18,6 @@ import br.com.roletakanto.model.TipoPokemon;
 import br.com.roletakanto.model.TipoResultadoRoleta;
 import br.com.roletakanto.model.item.Pocao;
 import br.com.roletakanto.model.item.PokebolaDourada;
-import br.com.roletakanto.model.item.Radar;
 import br.com.roletakanto.model.item.Reviver;
 import br.com.roletakanto.model.item.SuperPocao;
 
@@ -26,7 +25,6 @@ public final class CatalogoJogo {
   public static final String ID_POCAO = "pocao";
   public static final String ID_SUPER_POCAO = "super_pocao";
   public static final String ID_REVIVER = "reviver";
-  public static final String ID_RADAR = "radar";
   public static final String ID_POKEBOLA_DOURADA = "pokebola_dourada";
 
   private static final int PESO_ESPECIE = 15;
@@ -34,10 +32,9 @@ public final class CatalogoJogo {
   private static final int PESO_SUPER_POCAO = 5;
   private static final int PESO_REVIVER = 5;
   private static final int PESO_POKEBOLA_DOURADA = 10;
-  private static final int PESO_RADAR = 10;
-  private static final int PESO_EVENTO = 10;
+  private static final int PESO_EVENTO = 20;
 
-  /** Retorna as 15 espécies capturáveis e as 8 exclusivas dos líderes. */
+  /** Retorna as 15 espécies capturáveis e as 8 exclusivas dos líderes[cite: 15, 69]. */
   public Map<String, EspeciePokemon> carregarEspecies() {
     Map<String, EspeciePokemon> especies = new LinkedHashMap<>();
 
@@ -72,7 +69,7 @@ public final class CatalogoJogo {
 
   public List<Rota> criarRotas(Random random) {
     if (random == null) {
-      throw new IllegalArgumentException("O gerador aleatorio Ã© obrigatorio.");
+      throw new IllegalArgumentException("O gerador aleatório é obrigatório.");
     }
 
     List<Rota> rotas =
@@ -80,23 +77,23 @@ public final class CatalogoJogo {
             rota("rota_1", "Rota 1", "brock", random, "pidgey", "rattata", "pikachu"),
             rota("caverna", "Caverna", "misty", random, "zubat", "geodude", "sandshrew"),
             rota("rota_2", "Rota 2", "lt_surge", random, "oddish", "abra", "meowth"),
-            rota("torre_pokemon", "Torre Pokemon", "erika", random, "gastly", "cubone", "vulpix"));
+            rota("torre_pokemon", "Torre Pokémon", "erika", random, "gastly", "cubone", "vulpix"));
     validarPesosDasRotas(rotas);
     return rotas;
   }
 
-  /** Cria os quatro lÃƒÂ­deres e suas equipes fixas. */
+  /** Cria os quatro líderes e suas equipes fixas[cite: 16, 69]. */
   public List<LiderGinasio> criarLideres() {
     Map<String, EspeciePokemon> especies = carregarEspecies();
     return List.of(
-        lider("brock", "Brock", especies, "pedra", "InsiÂ­gnia Pedra", "geodude", "onix"),
-        lider("misty", "Misty", especies, "cascata", "InsiÂ­gnia Cascata", "staryu", "starmie"),
+        lider("brock", "Brock", especies, "pedra", "Insígnia Pedra", "geodude", "onix"),
+        lider("misty", "Misty", especies, "cascata", "Insígnia Cascata", "staryu", "starmie"),
         lider(
             "lt_surge",
             "Lt. Surge",
             especies,
             "trovao",
-            "Insignia TrovÃ£o",
+            "Insígnia Trovão",
             "voltorb",
             "pikachu",
             "raichu"),
@@ -105,7 +102,7 @@ public final class CatalogoJogo {
             "Erika",
             especies,
             "arco_iris",
-            "Insignia Arco-iris",
+            "Insígnia Arco-íris",
             "bellsprout",
             "weepinbell",
             "gloom"));
@@ -113,24 +110,23 @@ public final class CatalogoJogo {
 
   public List<Item> criarItens() {
     return List.of(
-        new Pocao(ID_POCAO, "PoÃ§Ã£o"),
-        new SuperPocao(ID_SUPER_POCAO, "Super poÃ§Ã£o"),
+        new Pocao(ID_POCAO, "Poção"),
+        new SuperPocao(ID_SUPER_POCAO, "Super Poção"),
         new Reviver(ID_REVIVER, "Reviver"),
-        new Radar(ID_RADAR, "Radar"),
-        new PokebolaDourada(ID_POKEBOLA_DOURADA, "Pokebola Dourada"));
+        new PokebolaDourada(ID_POKEBOLA_DOURADA, "Pokébola Dourada"));
   }
 
   /** Confere quantidades, IDs e pesos definidos pelo manual. */
   public void validarCatalogo() {
     if (carregarEspecies().size() != 23) {
-      throw new IllegalStateException("O catalogo deve conter 23 especies.");
+      throw new IllegalStateException("O catálogo deve conter 23 espécies.");
     }
-    if (criarItens().stream().map(Item::getId).distinct().count() != 5) {
-      throw new IllegalStateException("Os itens devem possuir IDs Ãºnicos.");
+    if (criarItens().stream().map(Item::getId).distinct().count() != 4) {
+      throw new IllegalStateException("Os itens devem possuir IDs únicos.");
     }
     List<Rota> rotas = criarRotas(new Random(0));
     if (rotas.size() != 4 || criarLideres().size() != 4) {
-      throw new IllegalStateException("A campanha deve possuir quatro rotas e quatro lÃ­Â­deres.");
+      throw new IllegalStateException("A campanha deve possuir quatro rotas e quatro líderes.");
     }
     validarPesosDasRotas(rotas);
   }
@@ -152,11 +148,12 @@ public final class CatalogoJogo {
   private Golpe golpeEspecial(TipoPokemon tipo) {
     return switch (tipo) {
       case FOGO -> new Golpe("ataque_fogo", "Ataque de Fogo", tipo, 20, 3);
-      case AGUA -> new Golpe("ataque_agua", "Ataque de Ã¡gua", tipo, 20, 3);
+      case AGUA -> new Golpe("ataque_agua", "Ataque de Água", tipo, 20, 3);
       case PLANTA -> new Golpe("ataque_planta", "Ataque de Planta", tipo, 20, 3);
-      case ELETRICO -> new Golpe("ataque_eletrico", "Ataque Eletrico", tipo, 20, 3);
+      case ELETRICO -> new Golpe("ataque_eletrico", "Ataque Elétrico", tipo, 20, 3);
       case ROCHA -> new Golpe("ataque_rocha", "Ataque de Rocha", tipo, 20, 3);
       case NORMAL -> new Golpe("ataque_normal", "Ataque Normal", tipo, 20, 3);
+      case VOADOR -> new Golpe("ataque_voador", "Ataque Voador", tipo, 20, 3);
     };
   }
 
@@ -177,9 +174,7 @@ public final class CatalogoJogo {
     segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_REVIVER, PESO_REVIVER));
     segmentos.add(
         new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_POKEBOLA_DOURADA, PESO_POKEBOLA_DOURADA));
-    segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_RADAR, PESO_RADAR));
-    // O serviÃƒÂ§o que aplicar o resultado escolherÃƒÂ¡ CENTRO, RECOMPENSA ou CAMINHO_VAZIO em partes
-    // iguais.
+    // O serviço que aplicar o resultado escolherá CENTRO, RECOMPENSA ou CAMINHO_VAZIO em partes iguais[cite: 15, 69].
     segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.EVENTO, "evento", PESO_EVENTO));
     return new Rota(id, nome, new Roleta(segmentos, random), idLider);
   }
@@ -195,7 +190,7 @@ public final class CatalogoJogo {
     for (String idEspecie : idsDaEquipe) {
       EspeciePokemon especie = especies.get(idEspecie);
       if (especie == null) {
-        throw new IllegalStateException("Especie inexistente para liÂ­der: " + idEspecie);
+        throw new IllegalStateException("Espécie inexistente para líder: " + idEspecie);
       }
       equipe.add(especie);
     }
@@ -204,7 +199,7 @@ public final class CatalogoJogo {
 
   private void adicionar(Map<String, EspeciePokemon> especies, EspeciePokemon especie) {
     if (especies.putIfAbsent(especie.getId(), especie) != null) {
-      throw new IllegalStateException("ID de especie duplicado: " + especie.getId());
+      throw new IllegalStateException("ID de espécie duplicado: " + especie.getId());
     }
   }
 

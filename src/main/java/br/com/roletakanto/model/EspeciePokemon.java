@@ -23,7 +23,7 @@ public final class EspeciePokemon implements Serializable {
     this.id = id;
     this.nome = nome;
     this.tipo = tipo;
-    this.hpMaximo = Math.max(0, hpMaximo);
+    this.hpMaximo = Math.max(1, hpMaximo);
     this.ataque = Math.max(0, ataque);
     this.defesa = Math.max(0, defesa);
     this.velocidade = Math.max(0, velocidade);

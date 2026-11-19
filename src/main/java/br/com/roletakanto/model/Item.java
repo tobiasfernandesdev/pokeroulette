@@ -7,7 +7,14 @@ public abstract class Item implements Serializable {
   private final String id, nome;
   private final int limitePilha;
   private static final int LIMIT = 5;
+
   protected Item(String id, String nome) {
+    if (id == null || id.isBlank()) {
+      throw new IllegalArgumentException("O ID do item e obrigatorio.");
+    }
+    if (nome == null || nome.isBlank()) {
+      throw new IllegalArgumentException("O nome do item e obrigatorio.");
+    }
     this.id = id;
     this.nome = nome;
     this.limitePilha = LIMIT;

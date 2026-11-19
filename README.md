@@ -4,7 +4,7 @@ Roleta Kanto é um projeto acadêmico de jogo 2D em Java Swing, inspirado na pri
 
 ## Requisitos
 
-- JDK 17 ou superior
+- JDK 25 ou superior
 - Uma IDE com suporte a projetos Maven, como IntelliJ IDEA, Eclipse, Visual Studio Code ou Apache NetBeans
 - Maven instalado para compilar e executar pelo terminal. As IDEs citadas também podem usar a integração Maven incluída nelas.
 
@@ -19,7 +19,7 @@ Abra a pasta `pokeroullete`, que é a pasta que contém o arquivo `pom.xml`.
 - **Visual Studio Code:** instale o **Extension Pack for Java**, abra esta pasta e aceite a importação Maven quando aparecer.
 - **Apache NetBeans:** use **File > Open Project** e selecione esta pasta Maven.
 
-Configure o projeto para usar um JDK 17 ou superior. A classe inicial é `br.com.roletakanto.app.Main`.
+Configure o projeto para usar um JDK 25 ou superior. O Maven compila o projeto com `--release 25`. A classe inicial é `br.com.roletakanto.app.Main`.
 
 ## Executar
 
