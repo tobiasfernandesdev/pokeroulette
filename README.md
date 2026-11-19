@@ -8,14 +8,14 @@ Roleta Kanto é um projeto acadêmico de jogo 2D em Java Swing, inspirado na pri
 - Uma IDE com suporte a projetos Maven, como IntelliJ IDEA, Eclipse, Visual Studio Code ou Apache NetBeans
 - Maven instalado para compilar e executar pelo terminal. As IDEs citadas também podem usar a integração Maven incluída nelas.
 
-As telas usam Swing. O Maven baixa os módulos do JavaFX usados para reproduzir o MP4 do menu.
+As telas usam Swing. O Maven baixa o JavaFX 25 para reproduzir os vídeos do menu e da escolha do inicial, incluindo as bibliotecas nativas do sistema operacional.
 
 ## Abrir em uma IDE
 
-Abra a pasta `pokeroullete`, que é a pasta que contém o arquivo `pom.xml`.
+Abra a pasta `pokeroulette`, que contém o arquivo `pom.xml`.
 
 - **IntelliJ IDEA:** use **File > Open** e selecione a pasta ou o arquivo `pom.xml`. Confirme a importação como projeto Maven.
-- **Eclipse:** use **File > Import > Maven > Existing Maven Projects** e selecione esta pasta.
+- **Eclipse:** use **File > Import > Maven > Existing Maven Projects** e selecione esta pasta. Se precisar atualizar as dependências, clique com o botão direito no projeto e escolha **Maven > Update Project**.
 - **Visual Studio Code:** instale o **Extension Pack for Java**, abra esta pasta e aceite a importação Maven quando aparecer.
 - **Apache NetBeans:** use **File > Open Project** e selecione esta pasta Maven.
 
@@ -23,9 +23,19 @@ Configure o projeto para usar um JDK 25 ou superior. O Maven compila o projeto c
 
 ## Executar
 
-Na IDE, execute a classe `Main`. A janela inicial simples confirma que o projeto foi importado e iniciado; ela não representa o jogo completo.
+### Prévia do menu e dos iniciais
 
-Para testar o menu com o vídeo, execute `br.com.roletakanto.view.TestePainelMenu` com o projeto Maven importado na IDE.
+Use o perfil `previa-menu` para abrir `TestePainelMenu`. O Maven prepara o JavaFX e compila a prévia em um diretório separado. A primeira execução precisa baixar as dependências.
+
+```powershell
+mvn -Pprevia-menu javafx:run
+```
+
+No **Eclipse**, clique com o botão direito no projeto e escolha **Run As > Maven build...**. Preencha **Goals** com `javafx:run`, **Profiles** com `previa-menu` e selecione na aba **JRE** o JDK do projeto. No **VS Code**, use o mesmo comando no terminal da pasta do projeto se o Maven estiver disponível no PATH.
+
+### Jogo
+
+Na IDE, execute a classe `Main` para abrir a janela inicial simples.
 
 Com Maven instalado, também é possível compilar e executar o JAR pelo terminal:
 
@@ -37,7 +47,7 @@ java -jar target/roleta-kanto-1.0.0.jar
 ## Estrutura
 
 ```text
-pokeroullete/
+pokeroulette/
 ├── pom.xml
 ├── README.md
 └── src/

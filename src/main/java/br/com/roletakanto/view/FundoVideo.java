@@ -1,8 +1,11 @@
 package br.com.roletakanto.view;
 
-import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.HierarchyEvent;
 import java.net.URL;
+
+import javax.swing.JPanel;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -14,20 +17,20 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 
-/** O JFXPanel hospeda a cena do JavaFX em um componente Swing. */
-final class FundoVideoMenu extends JFXPanel {
+/** Hospeda o vídeo JavaFX atrás dos controles Swing de uma tela. */
+final class FundoVideo extends JFXPanel {
     private static final long serialVersionUID = 1L;
 
-    private static final String CAMINHO_VIDEO = "/assets/backgrounds/menuOficialBG.mp4";
+    private final String caminhoVideo;
 
     // O player é criado, usado e liberado na thread do JavaFX.
     private transient MediaPlayer player;
 
-    FundoVideoMenu() {
-        setLayout(new BorderLayout());
+    FundoVideo(String nomeArquivo) {
+        caminhoVideo = "/assets/backgrounds/" + nomeArquivo;
         setFocusable(false);
 
-        // O Swing avisa quando o menu aparece ou sai da tela.
+        // O Swing avisa quando o painel aparece ou sai da tela.
         addHierarchyListener(evento -> {
             if ((evento.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
                 boolean visivel = isShowing();
@@ -43,15 +46,27 @@ final class FundoVideoMenu extends JFXPanel {
         });
     }
 
+    void posicionarControles(JPanel controles, double posicaoVertical) {
+        // Duas linhas flexíveis mantêm os controles na altura desejada ao redimensionar.
+        GridBagLayout layout = new GridBagLayout();
+        layout.rowHeights = new int[3];
+        layout.rowWeights = new double[] {posicaoVertical, 0, 1 - posicaoVertical};
+        setLayout(layout);
+
+        GridBagConstraints posicao = new GridBagConstraints();
+        posicao.gridy = 1;
+        add(controles, posicao);
+    }
+
     private void iniciarVideo() {
         if (player != null) {
             return;
         }
 
         // Busca o MP4 nos recursos do projeto, inclusive quando o jogo está em um JAR.
-        URL arquivo = getClass().getResource(CAMINHO_VIDEO);
+        URL arquivo = getClass().getResource(caminhoVideo);
         if (arquivo == null) {
-            System.err.println("Fundo do menu ausente em " + CAMINHO_VIDEO);
+            System.err.println("Vídeo de fundo ausente em " + caminhoVideo);
             return;
         }
 
@@ -79,7 +94,7 @@ final class FundoVideoMenu extends JFXPanel {
             // Instala a cena no JFXPanel e inicia o vídeo em loop e sem áudio.
             novoPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             novoPlayer.setMute(true);
-            setScene(new Scene(area, Color.rgb(252, 248, 230)));
+            setScene(new Scene(area, Color.web("#7E59D6")));
             novoPlayer.play();
         } catch (MediaException erro) {
             registrarFalha(erro);
@@ -108,7 +123,7 @@ final class FundoVideoMenu extends JFXPanel {
 
     private void liberarVideo() {
         if (player != null) {
-            // Ao sair do menu, devolve os recursos usados pela reprodução.
+            // Ao sair da tela, libera o player antes de mostrar outro vídeo.
             player.dispose();
             player = null;
             setScene(null);
@@ -116,6 +131,6 @@ final class FundoVideoMenu extends JFXPanel {
     }
 
     private static void registrarFalha(MediaException erro) {
-        System.err.println("Não foi possível reproduzir o fundo do menu: " + erro.getMessage());
+        System.err.println("Não foi possível reproduzir o vídeo de fundo: " + erro.getMessage());
     }
 }

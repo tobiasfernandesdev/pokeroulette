@@ -53,4 +53,35 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>previa-menu</id>
+            <build>
+                <!-- As classes da prévia ficam separadas das classes do jogo. -->
+                <directory>${project.basedir}/target/previa-menu-maven</directory>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>br/com/roletakanto/view/**/*.java</include>
+                                <include>br/com/roletakanto/model/**/*.java</include>
+                            </includes>
+                            <implicit>class</implicit>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.openjfx</groupId>
+                        <artifactId>javafx-maven-plugin</artifactId>
+                        <version>0.0.8</version>
+                        <configuration>
+                            <mainClass>br.com.roletakanto.view.TestePainelMenu</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

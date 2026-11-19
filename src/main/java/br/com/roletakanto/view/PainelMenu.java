@@ -16,11 +16,17 @@ import javax.swing.JPanel;
 public final class PainelMenu extends JPanel {
     private static final long serialVersionUID = 1L;
 
-    private final FundoVideoMenu fundo = new FundoVideoMenu();
+    private final FundoVideo fundo = new FundoVideo("menuBgOficial.mp4");
+    private final transient Runnable aoIniciar;
 
     private JButton botaoContinuar;
 
     public PainelMenu() {
+        this(() -> {});
+    }
+
+    PainelMenu(Runnable aoIniciar) {
+        this.aoIniciar = aoIniciar;
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1152, 648));
         getAccessibleContext().setAccessibleName("Menu principal de Roleta Kanto");
@@ -38,13 +44,6 @@ public final class PainelMenu extends JPanel {
         );
         painelBotoes.setOpaque(false);
 
-        // A margem inferior deixa uma faixa do vídeo visível abaixo dos botões.
-        painelBotoes.setBorder(
-            BorderFactory.createEmptyBorder(
-                0, 15, 88, 15
-            )
-        );
-
         JButton botaoNovaPartida = criarBotao("NOVA PARTIDA");
         botaoContinuar = criarBotao("CONTINUAR");
         JButton botaoSair = criarBotao("SAIR");
@@ -53,11 +52,12 @@ public final class PainelMenu extends JPanel {
         painelBotoes.add(botaoContinuar);
         painelBotoes.add(botaoSair);
 
-        // A fileira transparente é desenhada por cima do vídeo, no rodapé.
-        fundo.add(painelBotoes, BorderLayout.SOUTH);
+        // A fileira fica abaixo do título já desenhado no vídeo.
+        fundo.posicionarControles(painelBotoes, 0.74);
 
         // Continuar é habilitado quando o jogo informa que há um salvamento.
         atualizarDisponibilidade(false);
+        botaoNovaPartida.addActionListener(evento -> aoIniciar.run());
 
         botaoSair.addActionListener(
             e -> System.exit(0)
