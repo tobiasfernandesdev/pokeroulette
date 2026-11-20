@@ -3,8 +3,10 @@ package br.com.roletakanto.controller;
 import java.util.Map;
 import java.util.Random;
 
+import br.com.roletakanto.model.Batalha;
 import br.com.roletakanto.model.Equipe;
 import br.com.roletakanto.model.EspeciePokemon;
+import br.com.roletakanto.model.FasePartida;
 import br.com.roletakanto.model.Item;
 import br.com.roletakanto.model.Jogador;
 import br.com.roletakanto.model.Mochila;
@@ -15,7 +17,9 @@ import br.com.roletakanto.model.ResultadoRoleta;
 import br.com.roletakanto.model.ResultadoUsoItem;
 import br.com.roletakanto.model.Rota;
 import br.com.roletakanto.model.TipoEvento;
+import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.CatalogoJogo;
+import br.com.roletakanto.service.SeletorAcaoIA;
 
 /** Coordena os comandos da partida e aplica os resultados da roleta. */
 public final class ControladorPartida {
@@ -43,6 +47,13 @@ public final class ControladorPartida {
 
   /** Cria uma campanha e coloca o Pokemon inicial na equipe do jogador. */
   public void novaPartida(String idInicial) {
+    Item pocao = itens.get(CatalogoJogo.ID_POCAO);
+    Mochila mochila = new Mochila();
+    if(pocao == null) {
+      throw new IllegalStateException("Item de pocao nao encontrado no catalogo.");
+    }else{
+      mochila.adicionar(pocao, 2);
+    }
     EspeciePokemon inicial = especies.get(idInicial);
     if (inicial == null) {
       throw new IllegalArgumentException("Pokemon inicial inexistente: " + idInicial);
@@ -50,7 +61,7 @@ public final class ControladorPartida {
 
     Equipe equipe = new Equipe();
     equipe.adicionar(inicial.criarInstancia());
-    Jogador jogador = new Jogador("Jogador", equipe, new Reserva(), new Mochila());
+    Jogador jogador = new Jogador("Jogador", equipe, new Reserva(), mochila);
     partida = Partida.nova(jogador, catalogo.criarRotas(random), catalogo.criarLideres());
   }
 
@@ -66,7 +77,12 @@ public final class ControladorPartida {
     if (partida == null) {
       return "Inicie uma partida antes de girar a roleta.";
     }
-
+    if(!partida.podeContinuar()) {
+      return "A partida terminou. Inicie uma nova para continuar jogando.";
+    }
+    if(partida.getFase() != FasePartida.ROTA) {
+      return "A roleta so pode ser girada durante a fase de rota.";
+    }
     Rota rota = partida.getRotaAtual();
     if (!rota.temGiroDisponivel()) {
       return "Sem giros disponiveis em " + rota.getNome() + ".";
@@ -127,8 +143,14 @@ public final class ControladorPartida {
         jogador.getReserva().listar().forEach(Pokemon::restaurarParaCentro);
         yield "Evento Centro: todos os Pokemon foram restaurados.";
       }
-      case RECOMPENSA -> aplicarItem(CatalogoJogo.ID_POCAO)
-          .replace(" foi adicionado a mochila.", " (recompensa da rota).");
+      case RECOMPENSA -> {
+        Item pocao = itens.get(CatalogoJogo.ID_POCAO);
+        if (pocao == null) {
+          throw new IllegalStateException("Item de pocao nao encontrado no catalogo.");
+        }
+        yield aplicarItem(CatalogoJogo.ID_POCAO)
+            .replace(" foi adicionado a mochila.", " (recompensa da rota).");
+      }
       case CAMINHO_VAZIO -> "Evento Caminho Vazio: nada aconteceu.";
     };
   }
@@ -145,6 +167,12 @@ public final class ControladorPartida {
   public String usarGiroBonus() {
     if (partida == null) {
       return "Inicie uma partida antes de usar a Pokebola Dourada.";
+    }
+    if(!partida.podeContinuar()) {
+      return "A partida terminou. Inicie uma nova para continuar jogando.";
+    }
+    if(partida.getFase() != FasePartida.ROTA) {
+      return "A Pokebola Dourada so pode ser usada durante a fase de rota.";
     }
 
     ResultadoUsoItem resultado = partida.getJogador().getMochila().usar(
@@ -167,7 +195,12 @@ public final class ControladorPartida {
   }
 
   public void confirmarBatalha() {
-    /* Etapa posterior. */
+    if (partida == null) {
+      throw new IllegalStateException("Inicie uma partida antes de confirmar a batalha.");
+    }
+    partida.iniciarBatalha();
+    Batalha batalha = new Batalha(partida, partida.getJogador(), partida.getLiderAtual(), new CalculadoraDano(), new SeletorAcaoIA());
+    partida.definirBatalhaAtual(batalha);
   }
 
   public void continuarPartida() {

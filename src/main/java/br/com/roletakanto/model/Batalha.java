@@ -3,6 +3,7 @@ package br.com.roletakanto.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.SeletorAcaoIA;
@@ -23,12 +24,19 @@ public final class Batalha implements Serializable {
     this(null, jogador, lider, calculadora, ia);
   }
 
-  public Batalha(Partida partida, Jogador jogador, LiderGinasio lider, CalculadoraDano calculadora, SeletorAcaoIA ia) {
+  public Batalha(
+      Partida partida,
+      Jogador jogador,
+      LiderGinasio lider,
+      CalculadoraDano calculadora,
+      SeletorAcaoIA ia) {
     this.partida = partida;
-    this.jogador = jogador;
-    this.lider = lider;
-    this.calculadora = calculadora;
-    this.ia = ia;
+    this.jogador = Objects.requireNonNull(jogador, "O jogador da batalha é obrigatório.");
+    this.lider = Objects.requireNonNull(lider, "O líder de ginásio é obrigatório.");
+    this.calculadora =
+        Objects.requireNonNull(calculadora, "A calculadora de dano é obrigatória.");
+    this.ia = Objects.requireNonNull(ia, "O seletor de ação da IA é obrigatório.");
+
     this.equipeLider = List.copyOf(lider.criarEquipeDeBatalha());
     this.ativoJogador = encontrarProximoApto(jogador.getEquipe().listar());
     this.ativoLider = encontrarProximoApto(equipeLider);
@@ -39,30 +47,19 @@ public final class Batalha implements Serializable {
     List<String> mensagens = new ArrayList<>();
 
     if (acao == null) {
-      return criarResultadoInvalido("Acao invalida.");
+      return criarResultadoInvalido("Ação inválida.");
     }
 
     if (!batalhaEmAndamento()) {
-      return criarResultadoInvalido("A batalha ja foi encerrada.");
+      return criarResultadoInvalido("A batalha já foi encerrada.");
     }
 
-    if (acao.tipo() == TipoAcaoBatalha.DESISTIR) {
-      return processarDesistenciaJogador(mensagens);
-    } 
-    
-    if (acao.tipo() == TipoAcaoBatalha.TROCA) {
-      return processarTrocaJogador(acao, mensagens);
-    } 
-    
-    if (acao.tipo() == TipoAcaoBatalha.ITEM) {
-      return processarItemJogador(acao, mensagens);
-    } 
-    
-    if (acao.tipo() == TipoAcaoBatalha.GOLPE) {
-      return processarGolpeGeral(acao, mensagens);
-    }
-
-    return finalizarTurno(mensagens);
+    return switch (acao.tipo()) {
+      case DESISTIR -> processarDesistenciaJogador(mensagens);
+      case TROCA -> processarTrocaJogador(acao, mensagens);
+      case ITEM -> processarItemJogador(acao, mensagens);
+      case GOLPE -> processarGolpeGeral(acao, mensagens);
+    };
   }
 
   // --- Fluxos de Ação do Jogador ---
@@ -75,44 +72,50 @@ public final class Batalha implements Serializable {
 
   private ResultadoTurno processarTrocaJogador(AcaoBatalha acao, List<String> mensagens) {
     Pokemon escolhido = jogador.getEquipe().obterPorId(acao.idAlvo());
-    
+
     if (!podeTrocar(escolhido)) {
-      return criarResultadoInvalido("Nao foi possivel trocar para esse Pokemon.");
+      return criarResultadoInvalido("Não foi possível trocar para esse Pokémon.");
     }
-    
+
     trocarAtivo(escolhido);
     mensagens.add(jogador.getNome() + " enviou " + ativoJogador.getEspecie().getNome() + "!");
-    
+
     executarTurnoIA(mensagens);
     return finalizarTurno(mensagens);
   }
 
   private ResultadoTurno processarItemJogador(AcaoBatalha acao, List<String> mensagens) {
     Pokemon alvoItem = definirAlvoItem(acao.idAlvo());
-    
+
     if (alvoItem == null) {
-      return criarResultadoInvalido("Nenhum Pokemon valido para usar o item.");
+      return criarResultadoInvalido("Nenhum Pokémon válido para usar o item.");
     }
-    
+
     ContextoUsoItem contexto = new ContextoUsoItem(partida, this, alvoItem);
     ResultadoUsoItem uso = jogador.getMochila().usar(acao.idAlvo(), contexto);
     mensagens.add(uso.mensagem());
-    
+
     if (uso.sucesso()) {
       executarTurnoIA(mensagens);
     }
-    
+
     return finalizarTurno(mensagens);
   }
 
   private ResultadoTurno processarGolpeGeral(AcaoBatalha acao, List<String> mensagens) {
-    if (ativoJogador == null || !ativoJogador.estaApto()) {
-      return criarResultadoInvalido("Nenhum Pokemon apto para atacar.");
+    Pokemon jogadorAtivo = obterAtivoJogador();
+    Pokemon liderAtivo = getAtivoLider();
+
+    if (jogadorAtivo == null || !jogadorAtivo.estaApto()) {
+      return criarResultadoInvalido("Nenhum Pokémon apto para atacar.");
+    }
+    if (liderAtivo == null || !liderAtivo.estaApto()) {
+      return finalizarTurno(mensagens);
     }
 
-    Golpe golpeJogador = buscarGolpe(ativoJogador, acao.idAlvo());
+    Golpe golpeJogador = buscarGolpe(jogadorAtivo, acao.idAlvo());
     if (golpeJogador == null) {
-      return criarResultadoInvalido("Golpe invalido.");
+      return criarResultadoInvalido("Golpe inválido.");
     }
 
     AcaoBatalha acaoIA = ia.escolher(this);
@@ -122,17 +125,20 @@ public final class Batalha implements Serializable {
   }
 
   private void resolverOrdemDeAtaque(Golpe golpeJogador, AcaoBatalha acaoIA, List<String> mensagens) {
-    boolean iaFazAcaoNaoOfensiva = (acaoIA.tipo() == TipoAcaoBatalha.TROCA || acaoIA.tipo() == TipoAcaoBatalha.DESISTIR);
-    boolean jogadorMaisRapido = ativoJogador.getEspecie().getVelocidade() >= ativoLider.getEspecie().getVelocidade();
+    boolean iaFazAcaoNaoOfensiva =
+        acaoIA != null
+            && (acaoIA.tipo() == TipoAcaoBatalha.TROCA || acaoIA.tipo() == TipoAcaoBatalha.DESISTIR);
+    boolean jogadorMaisRapido =
+        ativoJogador.getEspecie().getVelocidade() >= ativoLider.getEspecie().getVelocidade();
 
     if (iaFazAcaoNaoOfensiva || !jogadorMaisRapido) {
       executarAcaoIA(acaoIA, mensagens);
-      if (batalhaEmAndamento() && ativoJogador.estaApto()) {
+      if (batalhaEmAndamento() && ativoJogador != null && ativoJogador.estaApto() && ativoLider != null && ativoLider.estaApto()) {
         aplicarGolpe(ativoJogador, ativoLider, golpeJogador, mensagens);
       }
     } else {
       aplicarGolpe(ativoJogador, ativoLider, golpeJogador, mensagens);
-      if (batalhaEmAndamento() && ativoLider.estaApto()) {
+      if (batalhaEmAndamento() && ativoLider != null && ativoLider.estaApto() && ativoJogador != null && ativoJogador.estaApto()) {
         executarAcaoIA(acaoIA, mensagens);
       }
     }
@@ -153,25 +159,26 @@ public final class Batalha implements Serializable {
       return;
     }
 
-    if (acaoIA.tipo() == TipoAcaoBatalha.DESISTIR) {
-      processarDesistenciaIA(mensagens);
-    } else if (acaoIA.tipo() == TipoAcaoBatalha.TROCA) {
-      processarTrocaIA(acaoIA, mensagens);
-    } else if (acaoIA.tipo() == TipoAcaoBatalha.GOLPE) {
-      processarGolpeIA(acaoIA, mensagens);
+    switch (acaoIA.tipo()) {
+      case DESISTIR -> processarDesistenciaIA(mensagens);
+      case TROCA -> processarTrocaIA(acaoIA, mensagens);
+      case GOLPE -> processarGolpeIA(acaoIA, mensagens);
+      case ITEM -> {
+        // Líder não utiliza itens na versão atual.
+      }
     }
   }
 
   private void processarDesistenciaIA(List<String> mensagens) {
-    equipeLider.forEach(p -> p.receberDano(p.getHpAtual()));
-    mensagens.add(lider.getNome() + " ficou sem opcoes e recuou!");
+    mensagens.add(lider.getNome() + " ficou sem opções e recuou!");
   }
 
   private void processarTrocaIA(AcaoBatalha acaoIA, List<String> mensagens) {
-    Pokemon proximo = equipeLider.stream()
-        .filter(p -> p.getId().equals(acaoIA.idAlvo()) && p.estaApto())
-        .findFirst()
-        .orElse(encontrarProximoApto(equipeLider));
+    Pokemon proximo =
+        equipeLider.stream()
+            .filter(p -> p.getId().equals(acaoIA.idAlvo()) && p.estaApto())
+            .findFirst()
+            .orElse(encontrarProximoApto(equipeLider));
 
     if (proximo != null) {
       ativoLider = proximo;
@@ -180,13 +187,13 @@ public final class Batalha implements Serializable {
   }
 
   private void processarGolpeIA(AcaoBatalha acaoIA, List<String> mensagens) {
-    if (ativoLider != null && ativoLider.estaApto()) {
+    if (ativoLider != null && ativoLider.estaApto() && ativoJogador != null && ativoJogador.estaApto()) {
       Golpe golpeIA = buscarGolpe(ativoLider, acaoIA.idAlvo());
-      
+
       if (golpeIA == null) {
         golpeIA = ia.escolherGolpe(ativoLider, ativoJogador);
       }
-      
+
       if (golpeIA != null) {
         aplicarGolpe(ativoLider, ativoJogador, golpeIA, mensagens);
       }
@@ -195,7 +202,8 @@ public final class Batalha implements Serializable {
 
   // --- Execução de Dano ---
 
-  private void aplicarGolpe(Pokemon atacante, Pokemon defensor, Golpe golpe, List<String> mensagens) {
+  private void aplicarGolpe(
+      Pokemon atacante, Pokemon defensor, Golpe golpe, List<String> mensagens) {
     if (atacante == null || defensor == null || golpe == null || !atacante.estaApto()) {
       return;
     }
@@ -203,8 +211,13 @@ public final class Batalha implements Serializable {
     int dano = calculadora.calcular(atacante, defensor, golpe);
     defensor.receberDano(dano);
 
-    mensagens.add(String.format("%s usou %s e causou %d de dano em %s!", 
-        atacante.getEspecie().getNome(), golpe.getNome(), dano, defensor.getEspecie().getNome()));
+    mensagens.add(
+        String.format(
+            "%s usou %s e causou %d de dano em %s!",
+            atacante.getEspecie().getNome(),
+            golpe.getNome(),
+            dano,
+            defensor.getEspecie().getNome()));
 
     adicionarMensagemEfetividade(golpe, defensor, mensagens);
 
@@ -213,12 +226,13 @@ public final class Batalha implements Serializable {
     }
   }
 
-  private void adicionarMensagemEfetividade(Golpe golpe, Pokemon defensor, List<String> mensagens) {
+  private void adicionarMensagemEfetividade(
+      Golpe golpe, Pokemon defensor, List<String> mensagens) {
     double mult = calculadora.multiplicador(golpe.getTipo(), defensor.getEspecie().getTipo());
     if (mult > 1.0) {
       mensagens.add("Foi super efetivo!");
     } else if (mult < 1.0) {
-      mensagens.add("Nao foi muito efetivo...");
+      mensagens.add("Não foi muito efetivo...");
     }
   }
 
@@ -226,20 +240,26 @@ public final class Batalha implements Serializable {
 
   private ResultadoTurno finalizarTurno(List<String> mensagens) {
     substituirPokemonDesmaiado(ativoLider, equipeLider, lider.getNome(), true, mensagens);
-    substituirPokemonDesmaiado(ativoJogador, jogador.getEquipe().listar(), jogador.getNome(), false, mensagens);
+    substituirPokemonDesmaiado(
+        ativoJogador, jogador.getEquipe().listar(), jogador.getNome(), false, mensagens);
 
     ResultadoBatalha resultado = verificarResultado();
-    
+
     if (resultado == ResultadoBatalha.VITORIA) {
-      mensagens.add("Vitoria contra " + lider.getNome() + "!");
+      mensagens.add("Vitória contra " + lider.getNome() + "!");
     } else if (resultado == ResultadoBatalha.DERROTA) {
-      mensagens.add("Todos os seus Pokemon desmaiaram!");
+      mensagens.add("Todos os seus Pokémon desmaiaram!");
     }
 
     return new ResultadoTurno(mensagens, resultado, getIdAtivoJogador());
   }
 
-  private void substituirPokemonDesmaiado(Pokemon ativo, List<Pokemon> equipe, String nomeTreinador, boolean isLider, List<String> mensagens) {
+  private void substituirPokemonDesmaiado(
+      Pokemon ativo,
+      List<Pokemon> equipe,
+      String nomeTreinador,
+      boolean isLider,
+      List<String> mensagens) {
     if (ativo != null && !ativo.estaApto()) {
       Pokemon proximo = encontrarProximoApto(equipe);
       if (proximo != null) {
@@ -259,7 +279,8 @@ public final class Batalha implements Serializable {
     return pokemon != null
         && pokemon.estaApto()
         && ativoJogador != null
-        && !pokemon.getId().equals(ativoJogador.getId());
+        && !pokemon.getId().equals(ativoJogador.getId())
+        && jogador.getEquipe().listar().contains(pokemon);
   }
 
   public void trocarAtivo(Pokemon pokemon) {
@@ -300,7 +321,7 @@ public final class Batalha implements Serializable {
       return jogador.getEquipe().listar().stream()
           .filter(p -> !p.estaApto())
           .findFirst()
-          .orElse(ativoJogador);
+          .orElse(null);
     }
     return ativoJogador;
   }
@@ -331,7 +352,7 @@ public final class Batalha implements Serializable {
     Pokemon ativo = obterAtivoJogador();
     return ativo != null ? ativo.getId() : null;
   }
-  
+
   public List<Pokemon> getEquipeLider() {
     return equipeLider;
   }
