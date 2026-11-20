@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Estado central da campanha[cite: 5]. */
 public final class Partida implements Serializable {
   private final Jogador jogador;
   private final List<Rota> rotas;

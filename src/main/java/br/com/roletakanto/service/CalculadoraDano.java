@@ -52,11 +52,11 @@ public final class CalculadoraDano {
       };
       case ROCHA -> switch (defensor) {
         case FOGO, VOADOR -> 2.0;
+        case ROCHA -> 0.5;
         default -> 1.0;
       };
       case VOADOR -> switch (defensor) {
         case PLANTA -> 2.0;
-        case ELETRICO, ROCHA -> 0.5;
         default -> 1.0;
       };
       case NORMAL -> switch (defensor) {
