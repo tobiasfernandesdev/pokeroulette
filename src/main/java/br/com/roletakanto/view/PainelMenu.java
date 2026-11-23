@@ -7,16 +7,19 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Window;
+import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 /** Organiza o fundo em vídeo e os botões Swing do menu principal. */
 public final class PainelMenu extends JPanel {
     private static final long serialVersionUID = 1L;
 
-    private final FundoVideo fundo = new FundoVideo("menuBgOficial.mp4");
+    private final FundoVideo fundo = new FundoVideo("menuBgOficial.mp4", true);
     private final transient Runnable aoIniciar;
 
     private JButton botaoContinuar;
@@ -59,9 +62,13 @@ public final class PainelMenu extends JPanel {
         atualizarDisponibilidade(false);
         botaoNovaPartida.addActionListener(evento -> aoIniciar.run());
 
-        botaoSair.addActionListener(
-            e -> System.exit(0)
-        );
+        botaoSair.addActionListener(evento -> {
+            // Envia o mesmo pedido de fechamento que o botão da própria janela.
+            Window janela = SwingUtilities.getWindowAncestor(this);
+            if (janela != null) {
+                janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
+            }
+        });
 
         revalidate();
         repaint();

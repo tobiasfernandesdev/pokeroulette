@@ -22,12 +22,14 @@ final class FundoVideo extends JFXPanel {
     private static final long serialVersionUID = 1L;
 
     private final String caminhoVideo;
+    private final boolean repetirVideo;
 
     // O player é criado, usado e liberado na thread do JavaFX.
     private transient MediaPlayer player;
 
-    FundoVideo(String nomeArquivo) {
+    FundoVideo(String nomeArquivo, boolean repetirVideo) {
         caminhoVideo = "/assets/backgrounds/" + nomeArquivo;
+        this.repetirVideo = repetirVideo;
         setFocusable(false);
 
         // O Swing avisa quando o painel aparece ou sai da tela.
@@ -88,16 +90,16 @@ final class FundoVideo extends JFXPanel {
             area.heightProperty().addListener((obs, anterior, atual) -> ajustar.run());
             // As dimensões do MP4 ficam disponíveis quando o player está pronto.
             novoPlayer.setOnReady(ajustar);
-            midia.setOnError(() -> registrarFalha(midia.getError()));
-            novoPlayer.setOnError(() -> registrarFalha(novoPlayer.getError()));
+            midia.setOnError(() -> tratarFalha(novoPlayer, midia.getError()));
+            novoPlayer.setOnError(() -> tratarFalha(novoPlayer, novoPlayer.getError()));
 
-            // Instala a cena no JFXPanel e inicia o vídeo em loop e sem áudio.
-            novoPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            // Em um único ciclo, o player termina no último quadro e a cena continua visível.
+            novoPlayer.setCycleCount(repetirVideo ? MediaPlayer.INDEFINITE : 1);
             novoPlayer.setMute(true);
             setScene(new Scene(area, Color.web("#7E59D6")));
             novoPlayer.play();
         } catch (MediaException erro) {
-            registrarFalha(erro);
+            tratarFalha(player, erro);
         }
     }
 
@@ -123,14 +125,24 @@ final class FundoVideo extends JFXPanel {
 
     private void liberarVideo() {
         if (player != null) {
-            // Ao sair da tela, libera o player antes de mostrar outro vídeo.
-            player.dispose();
+            // Desconecta a cena e libera os recursos da reprodução ao sair da tela.
+            MediaPlayer anterior = player;
             player = null;
             setScene(null);
+            anterior.dispose();
         }
     }
 
-    private static void registrarFalha(MediaException erro) {
-        System.err.println("Não foi possível reproduzir o vídeo de fundo: " + erro.getMessage());
+    private void tratarFalha(MediaPlayer playerComFalha, MediaException erro) {
+        // Um aviso atrasado de um player antigo não deve interromper o vídeo atual.
+        if (playerComFalha == player) {
+            System.err.println("Não foi possível reproduzir " + caminhoVideo + ": " + erro.getMessage());
+            liberarVideo();
+        }
+    }
+
+    static void encerrarJavaFxDaPrevia() {
+        // O fechamento da janela já agendou a liberação dos vídeos na fila do JavaFX.
+        Platform.runLater(Platform::exit);
     }
 }

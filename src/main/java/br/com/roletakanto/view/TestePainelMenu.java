@@ -1,6 +1,8 @@
 
 package br.com.roletakanto.view;
 
+import java.awt.GraphicsDevice;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public final class TestePainelMenu {
         navegador.registrar("inicial", inicial);
 
         JFrame janela = new JFrame("Teste - Roleta Kanto");
-        janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        janela.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         janela.setUndecorated(true);
         janela.setContentPane(navegador);
         janela.getRootPane().registerKeyboardAction(evento -> {
@@ -50,6 +52,20 @@ public final class TestePainelMenu {
         // A tela cheia usa o tamanho real do monitor, inclusive em 4K.
         janela.pack();
         janela.setLocationRelativeTo(null);
-        janela.getGraphicsConfiguration().getDevice().setFullScreenWindow(janela);
+        GraphicsDevice monitor = janela.getGraphicsConfiguration().getDevice();
+        janela.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent evento) {
+                if (monitor.getFullScreenWindow() == janela) {
+                    monitor.setFullScreenWindow(null);
+                }
+            }
+
+            @Override
+            public void windowClosed(WindowEvent evento) {
+                FundoVideo.encerrarJavaFxDaPrevia();
+            }
+        });
+        monitor.setFullScreenWindow(janela);
     }
 }
