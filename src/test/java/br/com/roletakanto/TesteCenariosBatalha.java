@@ -11,7 +11,14 @@ import br.com.roletakanto.service.CatalogoJogo;
 import java.util.List;
 import java.util.Random;
 
+import org.junit.Test;
+
 public final class TesteCenariosBatalha {
+
+  @Test
+  public void verificarCenariosBatalha() {
+    main(new String[0]);
+  }
 
   public static void main(String[] args) {
     CatalogoJogo catalogo = new CatalogoJogo();

@@ -1,5 +1,7 @@
 package br.com.roletakanto;
 
+import org.junit.Test;
+
 import br.com.roletakanto.controller.ControladorBatalha;
 import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.model.FasePartida;
@@ -10,6 +12,12 @@ import br.com.roletakanto.model.ResultadoTurno;
 import br.com.roletakanto.service.CatalogoJogo;
 
 public final class TesteFluxoBatalha {
+
+  // O Maven chama o mesmo cenário que pode ser executado pela classe diretamente.
+  @Test
+  public void verificarFluxoBatalha() {
+    main(new String[0]);
+  }
 
   public static void main(String[] args) {
     CatalogoJogo catalogo = new CatalogoJogo();
