@@ -6,8 +6,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
@@ -21,7 +23,9 @@ public final class PainelInicial extends JPanel {
 
     private final JPanel botoesIniciais = new JPanel(new GridLayout(1, 0, 16, 0));
     private final JLabel detalhe = new JLabel(" ", SwingConstants.CENTER);
+    private final JButton confirmar = EstiloJogo.criarBotao("ESCOLHER", true);
     private ButtonGroup selecao = new ButtonGroup();
+    private transient Consumer<String> aoConfirmar = id -> {};
 
     public PainelInicial() {
         super(new BorderLayout());
@@ -37,7 +41,18 @@ public final class PainelInicial extends JPanel {
         detalhe.setForeground(new Color(49, 23, 76));
         detalhe.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         controles.add(botoesIniciais, BorderLayout.CENTER);
-        controles.add(detalhe, BorderLayout.SOUTH);
+        JPanel rodape = new JPanel(new BorderLayout(12, 0));
+        rodape.setOpaque(false);
+        rodape.add(detalhe, BorderLayout.CENTER);
+        confirmar.setEnabled(false);
+        confirmar.addActionListener(evento -> {
+            String selecionado = obterIdSelecionado();
+            if (selecionado != null) {
+                aoConfirmar.accept(selecionado);
+            }
+        });
+        rodape.add(confirmar, BorderLayout.EAST);
+        controles.add(rodape, BorderLayout.SOUTH);
 
         // O título faz parte do MP4. As escolhas ficam no espaço livre abaixo dele.
         fundo.posicionarControles(controles, 0.55);
@@ -47,13 +62,17 @@ public final class PainelInicial extends JPanel {
         botoesIniciais.removeAll();
         selecao = new ButtonGroup();
         detalhe.setText(" ");
+        confirmar.setEnabled(false);
 
         for (EspeciePokemon especie : opcoes) {
             JToggleButton botao = new JToggleButton(especie.getNome());
             botao.setPreferredSize(new Dimension(164, 64));
             botao.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
             botao.setActionCommand(especie.getId());
-            botao.addActionListener(evento -> mostrarDetalhe(especie));
+            botao.addActionListener(evento -> {
+                mostrarDetalhe(especie);
+                confirmar.setEnabled(true);
+            });
 
             // O grupo mantém um único Pokémon selecionado por vez.
             selecao.add(botao);
@@ -66,6 +85,10 @@ public final class PainelInicial extends JPanel {
 
     public String obterIdSelecionado() {
         return selecao.getSelection() == null ? null : selecao.getSelection().getActionCommand();
+    }
+
+    public void definirAcaoConfirmar(Consumer<String> acao) {
+        aoConfirmar = acao == null ? id -> {} : acao;
     }
 
     public void mostrarDetalhe(EspeciePokemon especie) {

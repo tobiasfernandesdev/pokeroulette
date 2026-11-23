@@ -74,6 +74,8 @@
                             <includes>
                                 <include>br/com/roletakanto/view/**/*.java</include>
                                 <include>br/com/roletakanto/model/**/*.java</include>
+                                <include>br/com/roletakanto/controller/**/*.java</include>
+                                <include>br/com/roletakanto/service/**/*.java</include>
                             </includes>
                             <implicit>class</implicit>
                         </configuration>

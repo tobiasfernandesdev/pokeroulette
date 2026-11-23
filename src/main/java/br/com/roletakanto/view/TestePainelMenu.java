@@ -4,15 +4,13 @@ package br.com.roletakanto.view;
 import java.awt.GraphicsDevice;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.List;
-
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
-import br.com.roletakanto.model.EspeciePokemon;
-import br.com.roletakanto.model.TipoPokemon;
+import br.com.roletakanto.controller.ControladorPartida;
+import br.com.roletakanto.service.CatalogoJogo;
 
 /** Prévia independente do menu e da escolha do Pokémon inicial. */
 public final class TestePainelMenu {
@@ -28,21 +26,31 @@ public final class TestePainelMenu {
         NavegadorTelas navegador = new NavegadorTelas();
         PainelMenu menu = new PainelMenu(() -> navegador.mostrar("inicial"));
         PainelInicial inicial = new PainelInicial();
-        // Dados da prévia para testar a interface sem iniciar a lógica da partida.
-        inicial.exibirOpcoes(List.of(
-            new EspeciePokemon("bulbasaur", "Bulbasaur", TipoPokemon.PLANTA, 70, 17, 13, 12, List.of()),
-            new EspeciePokemon("charmander", "Charmander", TipoPokemon.FOGO, 62, 20, 10, 17, List.of()),
-            new EspeciePokemon("squirtle", "Squirtle", TipoPokemon.AGUA, 72, 15, 17, 10, List.of())
-        ));
+        PainelRota rota = new PainelRota();
+        ControladorPartida controlador = new ControladorPartida();
+        CatalogoJogo catalogo = new CatalogoJogo();
+        var especies = catalogo.carregarEspecies();
+        inicial.exibirOpcoes(java.util.List.of(
+            especies.get("bulbasaur"),
+            especies.get("charmander"),
+            especies.get("squirtle")));
+        inicial.definirAcaoConfirmar(idInicial -> {
+            controlador.novaPartida(idInicial);
+            rota.conectar(controlador);
+            navegador.mostrar("rota");
+        });
         navegador.registrar("menu", menu);
         navegador.registrar("inicial", inicial);
+        navegador.registrar("rota", rota);
 
         JFrame janela = new JFrame("Teste - Roleta Kanto");
         janela.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         janela.setUndecorated(true);
         janela.setContentPane(navegador);
         janela.getRootPane().registerKeyboardAction(evento -> {
-            if ("inicial".equals(navegador.getTelaAtual())) {
+            if ("rota".equals(navegador.getTelaAtual())) {
+                navegador.mostrar("inicial");
+            } else if ("inicial".equals(navegador.getTelaAtual())) {
                 navegador.mostrar("menu");
             } else {
                 janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));

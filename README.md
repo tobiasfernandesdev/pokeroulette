@@ -29,9 +29,9 @@ Configure o projeto para usar um JDK 25 ou superior. O Maven compila o projeto c
 
 ## Executar
 
-### Prévia do menu e dos iniciais
+### Prévia do menu, dos iniciais e da roleta
 
-Use o perfil `previa-menu` para abrir `TestePainelMenu`. O Maven prepara o JavaFX e compila a prévia em um diretório separado. A primeira execução precisa baixar as dependências.
+Use o perfil `previa-menu` para abrir `TestePainelMenu`. O fluxo permite iniciar no menu, escolher o Pokémon inicial e abrir a rota com a roleta conectada à partida. O Maven prepara o JavaFX e compila a prévia em um diretório separado. A primeira execução precisa baixar as dependências.
 
 ```powershell
 mvn -Pprevia-menu javafx:run

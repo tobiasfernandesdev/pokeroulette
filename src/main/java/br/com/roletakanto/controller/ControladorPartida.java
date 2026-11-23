@@ -74,26 +74,37 @@ public final class ControladorPartida {
    * pode ser exibida diretamente no terminal ou na interface Swing.
    */
   public String girarRoleta() {
+    return girarRoletaComResultado().mensagem();
+  }
+
+  /**
+   * Executa um único sorteio e preserva o resultado usado pela animação da tela.
+   * O método textual acima continua disponível para os clientes existentes.
+   */
+  public ResultadoGiro girarRoletaComResultado() {
     if (partida == null) {
-      return "Inicie uma partida antes de girar a roleta.";
+      return ResultadoGiro.falha("Inicie uma partida antes de girar a roleta.");
     }
     if(!partida.podeContinuar()) {
-      return "A partida terminou. Inicie uma nova para continuar jogando.";
+      return ResultadoGiro.falha(
+          "A partida terminou. Inicie uma nova para continuar jogando.");
     }
     if(partida.getFase() != FasePartida.ROTA) {
-      return "A roleta so pode ser girada durante a fase de rota.";
+      return ResultadoGiro.falha("A roleta só pode ser girada durante a fase de rota.");
     }
     Rota rota = partida.getRotaAtual();
     if (!rota.temGiroDisponivel()) {
-      return "Sem giros disponiveis em " + rota.getNome() + ".";
+      return ResultadoGiro.falha("Sem giros disponíveis em " + rota.getNome() + ".");
     }
 
     rota.registrarGiro();
     ResultadoRoleta resultado = rota.getRoleta().sortear();
     String mensagem = aplicarResultado(resultado);
 
-    return "Resultado: " + mensagem + System.lineSeparator()
-        + "Giros restantes: " + rota.getGirosRestantes();
+    return ResultadoGiro.sucesso(
+        resultado,
+        "Resultado: " + mensagem + System.lineSeparator()
+            + "Giros restantes: " + rota.getGirosRestantes());
   }
 
   private String aplicarResultado(ResultadoRoleta resultado) {

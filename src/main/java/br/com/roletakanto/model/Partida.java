@@ -72,6 +72,14 @@ public final class Partida implements Serializable {
     return List.copyOf(insignias);
   }
 
+  public int getNumeroRotaAtual() {
+    return indiceRota + 1;
+  }
+
+  public int getTotalRotas() {
+    return rotas.size();
+  }
+
   public void iniciarOrganizacao() {
     validarEstado();
     if (!podeContinuar()) {
