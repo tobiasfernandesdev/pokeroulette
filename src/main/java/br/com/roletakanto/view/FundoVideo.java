@@ -22,12 +22,14 @@ final class FundoVideo extends JFXPanel {
     private static final long serialVersionUID = 1L;
 
     private final String caminhoVideo;
+    private final boolean repetirVideo;
 
     // O player é criado, usado e liberado na thread do JavaFX.
     private transient MediaPlayer player;
 
-    FundoVideo(String nomeArquivo) {
+    FundoVideo(String nomeArquivo, boolean repetirVideo) {
         caminhoVideo = "/assets/backgrounds/" + nomeArquivo;
+        this.repetirVideo = repetirVideo;
         setFocusable(false);
 
         // O Swing avisa quando o painel aparece ou sai da tela.
@@ -91,8 +93,8 @@ final class FundoVideo extends JFXPanel {
             midia.setOnError(() -> registrarFalha(midia.getError()));
             novoPlayer.setOnError(() -> registrarFalha(novoPlayer.getError()));
 
-            // Instala a cena no JFXPanel e inicia o vídeo em loop e sem áudio.
-            novoPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            // Em um único ciclo, o player termina no último quadro e a cena continua visível.
+            novoPlayer.setCycleCount(repetirVideo ? MediaPlayer.INDEFINITE : 1);
             novoPlayer.setMute(true);
             setScene(new Scene(area, Color.web("#7E59D6")));
             novoPlayer.play();

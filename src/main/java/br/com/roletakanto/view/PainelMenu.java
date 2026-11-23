@@ -16,7 +16,7 @@ import javax.swing.JPanel;
 public final class PainelMenu extends JPanel {
     private static final long serialVersionUID = 1L;
 
-    private final FundoVideo fundo = new FundoVideo("menuBgOficial.mp4");
+    private final FundoVideo fundo = new FundoVideo("menuBgOficial.mp4", true);
     private final transient Runnable aoIniciar;
 
     private JButton botaoContinuar;

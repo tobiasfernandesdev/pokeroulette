@@ -28,7 +28,7 @@ public final class PainelInicial extends JPanel {
         setPreferredSize(new Dimension(1152, 648));
         getAccessibleContext().setAccessibleName("Escolha seu Pokémon inicial");
 
-        FundoVideo fundo = new FundoVideo("inicialBgOficial.mp4");
+        FundoVideo fundo = new FundoVideo("inicialBgOficial.mp4", false);
         add(fundo, BorderLayout.CENTER);
 
         JPanel controles = new JPanel(new BorderLayout(0, 16));
