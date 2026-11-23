@@ -317,15 +317,20 @@ public final class Batalha implements Serializable {
   }
 
   private Pokemon definirAlvoItem(String idItem) {
-    if (idItem != null && idItem.toLowerCase().contains("reviver")) {
-      return jogador.getEquipe().listar().stream()
-          .filter(p -> !p.estaApto())
-          .findFirst()
-          .orElse(null);
-    }
-    return ativoJogador;
-  }
+      if (idItem == null || idItem.isBlank()) {
+        return null;
+      }
 
+      if (idItem.toLowerCase().contains("reviver")) {
+        return jogador.getEquipe().listar().stream()
+            .filter(p -> !p.estaApto())
+            .findFirst()
+            .orElse(null);
+      }
+
+      Pokemon atual = obterAtivoJogador();
+      return (atual != null && atual.estaApto()) ? atual : null;
+  }
   private Pokemon encontrarProximoApto(List<Pokemon> lista) {
     return lista.stream().filter(Pokemon::estaApto).findFirst().orElse(null);
   }

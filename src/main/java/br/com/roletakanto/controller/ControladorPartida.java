@@ -250,17 +250,21 @@ public final class ControladorPartida {
 
   public void confirmarBatalha() {
     if (partida == null) {
-      throw new IllegalStateException("Inicie uma partida antes de confirmar a batalha.");
-    }
-    partida.iniciarBatalha();
-    Batalha batalha =
-        new Batalha(
-            partida,
-            partida.getJogador(),
-            partida.getLiderAtual(),
-            new CalculadoraDano(),
-            new SeletorAcaoIA());
-    partida.definirBatalhaAtual(batalha);
+          throw new IllegalStateException("Inicie uma partida antes de confirmar a batalha.");
+        }
+        prepararBatalhaAtual();
+      }
+
+      private void prepararBatalhaAtual() {
+        partida.iniciarBatalha();
+        Batalha batalha =
+            new Batalha(
+                partida,
+                partida.getJogador(),
+                partida.getLiderAtual(),
+                new CalculadoraDano(),
+                new SeletorAcaoIA());
+        partida.definirBatalhaAtual(batalha);
   }
 
   public void navegarParaFase(FasePartida fase) {
@@ -292,7 +296,16 @@ public final class ControladorPartida {
       }
       case BATALHA -> {
         if (partida.getFase() != FasePartida.BATALHA) {
-          partida.iniciarBatalha();
+          prepararBatalhaAtual();
+        } else if (partida.getBatalhaAtual() == null) {
+          Batalha batalha =
+              new Batalha(
+                  partida,
+                  partida.getJogador(),
+                  partida.getLiderAtual(),
+                  new CalculadoraDano(),
+                  new SeletorAcaoIA());
+          partida.definirBatalhaAtual(batalha);
         }
       }
       case DERROTA, VITORIA_FINAL -> {
