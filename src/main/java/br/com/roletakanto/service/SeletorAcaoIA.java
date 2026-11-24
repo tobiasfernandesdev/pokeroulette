@@ -1,6 +1,7 @@
 package br.com.roletakanto.service;
 
-import  java.util.Comparator;
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
 
 import br.com.roletakanto.model.AcaoBatalha;
@@ -8,7 +9,8 @@ import br.com.roletakanto.model.Batalha;
 import br.com.roletakanto.model.Golpe;
 import br.com.roletakanto.model.Pokemon;
 
-public final class SeletorAcaoIA{
+public final class SeletorAcaoIA implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final CalculadoraDano calculadora;
 

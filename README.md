@@ -57,10 +57,11 @@ java -jar target/roleta-kanto-1.0.0.jar
 Para jogar sem abrir janelas, execute `MainTerminal` pela IDE ou use Maven:
 
 ```powershell
-mvn -q -Dexec.mainClass=br.com.roletakanto.app.MainTerminal org.codehaus.mojo:exec-maven-plugin:3.5.0:java
+mvn -q compile
+java -cp target/classes br.com.roletakanto.app.MainTerminal
 ```
 
-Essa versão oferece nova partida e continuação, escolha do inicial, roleta, organização da equipe e batalhas. O salvamento é separado da interface gráfica e fica em `saves/partida-terminal.dat`.
+Digite o número da opção e pressione Enter. Você pode escolher o inicial, girar a roleta, usar itens, organizar a equipe e enfrentar os líderes. Use **Salvar partida** para gravar a fase atual, inclusive durante uma batalha. O terminal usa `saves/partida-terminal.dat`.
 
 ### Compilar e rodar os testes
 

@@ -4,8 +4,10 @@ import br.com.roletakanto.model.Partida;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 public final class RepositorioPartidaArquivo implements RepositorioPartida {
@@ -38,13 +40,21 @@ public final class RepositorioPartidaArquivo implements RepositorioPartida {
       throw new IllegalArgumentException("A partida não pode ser nula.");
     }
 
-    Path diretorioPai = caminho.getParent();
-    if (diretorioPai != null) {
-      Files.createDirectories(diretorioPai);
-    }
-
-    try (ObjectOutputStream saida = new ObjectOutputStream(Files.newOutputStream(caminho))) {
-      saida.writeObject(partida);
+    Path destino = caminho.toAbsolutePath();
+    Path diretorioPai = destino.getParent();
+    Files.createDirectories(diretorioPai);
+    Path temporario = Files.createTempFile(diretorioPai, "partida-", ".tmp");
+    try {
+      try (ObjectOutputStream saida = new ObjectOutputStream(Files.newOutputStream(temporario))) {
+        saida.writeObject(partida);
+      }
+      try {
+        Files.move(temporario, destino, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+      } catch (AtomicMoveNotSupportedException e) {
+        Files.move(temporario, destino, StandardCopyOption.REPLACE_EXISTING);
+      }
+    } finally {
+      Files.deleteIfExists(temporario);
     }
   }
 

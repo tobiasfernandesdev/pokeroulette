@@ -164,11 +164,9 @@ public final class Batalha implements Serializable {
     if (iaFazAcaoNaoOfensiva || !jogadorMaisRapido) {
       executarAcaoIA(acaoIA, mensagens);
       if (batalhaEmAndamento() && ativoJogador != null && ativoJogador.estaApto() && ativoLider != null && ativoLider.estaApto()) {
-        consumirUsoGolpe(ativoJogador, golpeJogador);
         aplicarGolpe(ativoJogador, ativoLider, golpeJogador, mensagens);
       }
     } else {
-      consumirUsoGolpe(ativoJogador, golpeJogador);
       aplicarGolpe(ativoJogador, ativoLider, golpeJogador, mensagens);
       if (batalhaEmAndamento() && ativoLider != null && ativoLider.estaApto() && ativoJogador != null && ativoJogador.estaApto()) {
         executarAcaoIA(acaoIA, mensagens);

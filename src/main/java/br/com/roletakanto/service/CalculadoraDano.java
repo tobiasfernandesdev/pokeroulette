@@ -1,10 +1,13 @@
 package br.com.roletakanto.service;
 
+import java.io.Serializable;
+
 import br.com.roletakanto.model.Golpe;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.TipoPokemon;
 
-public final class CalculadoraDano {
+public final class CalculadoraDano implements Serializable {
+  private static final long serialVersionUID = 1L;
 
   public int calcular(Pokemon atacante, Pokemon defensor, Golpe golpe) {
     if (atacante == null || defensor == null || golpe == null) {

@@ -6,20 +6,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Random;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import br.com.roletakanto.model.AcaoBatalha;
 import br.com.roletakanto.model.Batalha;
 import br.com.roletakanto.model.FasePartida;
 import br.com.roletakanto.model.Golpe;
+import br.com.roletakanto.model.LiderGinasio;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoBatalha;
 import br.com.roletakanto.model.ResultadoTurno;
 import br.com.roletakanto.persistence.RepositorioPartidaArquivo;
+import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.CatalogoJogo;
+import br.com.roletakanto.service.SeletorAcaoIA;
 
 class TesteCampanhaERegrasBatalha {
 
@@ -42,33 +47,30 @@ class TesteCampanhaERegrasBatalha {
 
   @Test
   void deveBloquearGolpeEspecialQuandoUsosEsgotarem() {
-    controladorPartida.confirmarBatalha();
-    Batalha batalha = controladorPartida.getPartida().getBatalhaAtual();
+    controladorPartida.novaPartida("bulbasaur");
+    var jogador = controladorPartida.getPartida().getJogador();
+    var onix = catalogo.carregarEspecies().get("onix");
+    var lider = new LiderGinasio("treino", "Treino", List.of(onix), null);
+    Batalha batalha = new Batalha(jogador, lider, new CalculadoraDano(), new SeletorAcaoIA());
     Pokemon ativo = batalha.obterAtivoJogador();
-
     Golpe especial =
         ativo.getEspecie().getGolpes().stream()
-            .filter(g -> !g.ehIlimitado() && g.getUsosMaximos() > 0)
+            .filter(g -> !g.ehIlimitado())
             .findFirst()
             .orElseThrow();
 
-    int limite = especial.getUsosMaximos();
-    for (int i = 0; i < limite; i++) {
-      if (batalha.verificarResultado() != ResultadoBatalha.EM_ANDAMENTO) {
-        return; // Caso a batalha termine antes de esgotar o PP
-      }
-      controladorBatalha.executarGolpe(especial.getId());
+    for (int i = 0; i < especial.getUsosMaximos(); i++) {
+      assertTrue(batalha.possuiUsoDisponivel(ativo, especial));
+      var turno = batalha.executarAcao(AcaoBatalha.golpe(especial.getId()));
+      assertEquals(ResultadoBatalha.EM_ANDAMENTO, turno.resultado());
+      assertTrue(turno.mensagens().stream().anyMatch(m -> m.contains("usou " + especial.getNome())));
     }
 
-    if (batalha.verificarResultado() == ResultadoBatalha.EM_ANDAMENTO
-        && batalha.obterAtivoJogador().getId().equals(ativo.getId())) {
-      assertFalse(batalha.possuiUsoDisponivel(ativo, especial));
-      ResultadoTurno tentativaExtra = controladorBatalha.executarGolpe(especial.getId());
-      assertEquals(ResultadoBatalha.EM_ANDAMENTO, tentativaExtra.resultado());
-      assertTrue(
-          tentativaExtra.mensagens().stream()
-              .anyMatch(m -> m.toLowerCase().contains("sem mais usos")));
-    }
+    assertFalse(batalha.possuiUsoDisponivel(ativo, especial));
+    int hpAdversario = batalha.getAtivoLider().getHpAtual();
+    ResultadoTurno tentativaExtra = batalha.executarAcao(AcaoBatalha.golpe(especial.getId()));
+    assertEquals(hpAdversario, batalha.getAtivoLider().getHpAtual());
+    assertTrue(tentativaExtra.mensagens().stream().anyMatch(m -> m.contains("não tem mais usos")));
   }
 
   @Test

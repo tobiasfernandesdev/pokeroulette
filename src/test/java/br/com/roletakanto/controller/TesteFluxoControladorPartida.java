@@ -93,6 +93,26 @@ class TesteFluxoControladorPartida {
   }
 
   @Test
+  void deveRetomarBatalhaComHpPreservado() {
+    controlador.novaPartida("bulbasaur");
+    controlador.salvarPartida();
+    controlador.confirmarBatalha();
+    var combate = new ControladorBatalha(controlador.getPartida());
+    combate.executarGolpe("ataque_planta");
+    var batalha = controlador.getPartida().getBatalhaAtual();
+    int hpJogador = batalha.obterAtivoJogador().getHpAtual();
+    int hpAdversario = batalha.getAtivoLider().getHpAtual();
+    controlador.salvarPartida();
+
+    var novoControlador = new ControladorPartida(catalogo, repositorio, new Random(42L));
+    novoControlador.continuarPartida();
+    var retomada = novoControlador.getPartida();
+    assertEquals(FasePartida.BATALHA, retomada.getFase());
+    assertEquals(hpJogador, retomada.getBatalhaAtual().obterAtivoJogador().getHpAtual());
+    assertEquals(hpAdversario, retomada.getBatalhaAtual().getAtivoLider().getHpAtual());
+  }
+
+  @Test
   void deveFalharAoContinuarSemGravacaoOuComArquivoInvalido() throws Exception {
     RepositorioPartida repoVazio =
         new RepositorioPartidaArquivo(pastaTemp.resolve("inexistente.dat"));
