@@ -2,7 +2,9 @@ package br.com.roletakanto.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import br.com.roletakanto.service.CalculadoraDano;
@@ -15,7 +17,7 @@ public final class Batalha implements Serializable {
   private final CalculadoraDano calculadora;
   private final SeletorAcaoIA ia;
   private final List<Pokemon> equipeLider;
-
+  private final Map<String, Integer> usosRestantesGolpes = new HashMap<>();
   private Pokemon ativoJogador;
   private Pokemon ativoLider;
   private boolean desistiu;
@@ -41,6 +43,30 @@ public final class Batalha implements Serializable {
     this.ativoJogador = encontrarProximoApto(jogador.getEquipe().listar());
     this.ativoLider = encontrarProximoApto(equipeLider);
     this.desistiu = false;
+  }
+  private String chaveGolpe(Pokemon pokemon, Golpe golpe) {
+    return pokemon.getId() + ":" + golpe.getId();
+  } 
+
+  public boolean possuiUsoDisponivel(Pokemon pokemon, Golpe golpe) {
+    if (pokemon == null || golpe == null) {
+      return false;
+    }
+    if (golpe.ehIlimitado()) {
+      return true;
+    }
+    String chave = chaveGolpe(pokemon, golpe);
+    int restantes = usosRestantesGolpes.computeIfAbsent(chave, k -> golpe.getUsosMaximos());
+    return restantes > 0;
+  }
+
+  private void consumirUsoGolpe(Pokemon pokemon, Golpe golpe) {
+    if (pokemon == null || golpe == null || golpe.ehIlimitado()) {
+      return;
+    }
+    String chave = chaveGolpe(pokemon, golpe);
+    int restantes = usosRestantesGolpes.computeIfAbsent(chave, k -> golpe.getUsosMaximos());
+    usosRestantesGolpes.put(chave, Math.max(0, restantes - 1));
   }
 
   public ResultadoTurno executarAcao(AcaoBatalha acao) {
@@ -103,26 +129,30 @@ public final class Batalha implements Serializable {
   }
 
   private ResultadoTurno processarGolpeGeral(AcaoBatalha acao, List<String> mensagens) {
-    Pokemon jogadorAtivo = obterAtivoJogador();
-    Pokemon liderAtivo = getAtivoLider();
+      Pokemon jogadorAtivo = obterAtivoJogador();
+      Pokemon liderAtivo = getAtivoLider();
 
-    if (jogadorAtivo == null || !jogadorAtivo.estaApto()) {
-      return criarResultadoInvalido("Nenhum Pok√©mon apto para atacar.");
-    }
-    if (liderAtivo == null || !liderAtivo.estaApto()) {
+      if (jogadorAtivo == null || !jogadorAtivo.estaApto()) {
+        return criarResultadoInvalido("Nenhum PokÈmon apto para atacar.");
+      }
+      if (liderAtivo == null || !liderAtivo.estaApto()) {
+        return finalizarTurno(mensagens);
+      }
+
+      Golpe golpeJogador = buscarGolpe(jogadorAtivo, acao.idAlvo());
+      if (golpeJogador == null) {
+        return criarResultadoInvalido("Golpe inv·lido.");
+      }
+      if (!possuiUsoDisponivel(jogadorAtivo, golpeJogador)) {
+        return criarResultadoInvalido(
+            "O golpe " + golpeJogador.getNome() + " n„o tem mais usos restantes.");
+      }
+
+      AcaoBatalha acaoIA = ia.escolher(this);
+      resolverOrdemDeAtaque(golpeJogador, acaoIA, mensagens);
+
       return finalizarTurno(mensagens);
     }
-
-    Golpe golpeJogador = buscarGolpe(jogadorAtivo, acao.idAlvo());
-    if (golpeJogador == null) {
-      return criarResultadoInvalido("Golpe inv√°lido.");
-    }
-
-    AcaoBatalha acaoIA = ia.escolher(this);
-    resolverOrdemDeAtaque(golpeJogador, acaoIA, mensagens);
-
-    return finalizarTurno(mensagens);
-  }
 
   private void resolverOrdemDeAtaque(Golpe golpeJogador, AcaoBatalha acaoIA, List<String> mensagens) {
     boolean iaFazAcaoNaoOfensiva =
@@ -134,9 +164,11 @@ public final class Batalha implements Serializable {
     if (iaFazAcaoNaoOfensiva || !jogadorMaisRapido) {
       executarAcaoIA(acaoIA, mensagens);
       if (batalhaEmAndamento() && ativoJogador != null && ativoJogador.estaApto() && ativoLider != null && ativoLider.estaApto()) {
+        consumirUsoGolpe(ativoJogador, golpeJogador);
         aplicarGolpe(ativoJogador, ativoLider, golpeJogador, mensagens);
       }
     } else {
+      consumirUsoGolpe(ativoJogador, golpeJogador);
       aplicarGolpe(ativoJogador, ativoLider, golpeJogador, mensagens);
       if (batalhaEmAndamento() && ativoLider != null && ativoLider.estaApto() && ativoJogador != null && ativoJogador.estaApto()) {
         executarAcaoIA(acaoIA, mensagens);
@@ -186,12 +218,15 @@ public final class Batalha implements Serializable {
     }
   }
 
-  private void processarGolpeIA(AcaoBatalha acaoIA, List<String> mensagens) {
+ private void processarGolpeIA(AcaoBatalha acaoIA, List<String> mensagens) {
     if (ativoLider != null && ativoLider.estaApto() && ativoJogador != null && ativoJogador.estaApto()) {
       Golpe golpeIA = buscarGolpe(ativoLider, acaoIA.idAlvo());
-
-      if (golpeIA == null) {
-        golpeIA = ia.escolherGolpe(ativoLider, ativoJogador);
+      if (golpeIA == null || !possuiUsoDisponivel(ativoLider, golpeIA)) {
+        golpeIA =
+            ativoLider.getEspecie().getGolpes().stream()
+                .filter(g -> possuiUsoDisponivel(ativoLider, g))
+                .findFirst()
+                .orElse(ia.escolherGolpe(ativoLider, ativoJogador));
       }
 
       if (golpeIA != null) {
@@ -202,11 +237,13 @@ public final class Batalha implements Serializable {
 
   // --- Execu√ß√£o de Dano ---
 
-  private void aplicarGolpe(
+private void aplicarGolpe(
       Pokemon atacante, Pokemon defensor, Golpe golpe, List<String> mensagens) {
     if (atacante == null || defensor == null || golpe == null || !atacante.estaApto()) {
       return;
     }
+
+    consumirUsoGolpe(atacante, golpe);
 
     int dano = calculadora.calcular(atacante, defensor, golpe);
     defensor.receberDano(dano);
@@ -316,16 +353,21 @@ public final class Batalha implements Serializable {
     return ativoLider;
   }
 
-  private Pokemon definirAlvoItem(String idItem) {
-    if (idItem != null && idItem.toLowerCase().contains("reviver")) {
-      return jogador.getEquipe().listar().stream()
-          .filter(p -> !p.estaApto())
-          .findFirst()
-          .orElse(null);
-    }
-    return ativoJogador;
-  }
+  private Pokemon definirAlvoItem(String idItem){
+      if (idItem == null || idItem.isBlank()) {
+        return null;
+      }
 
+      if (idItem.toLowerCase().contains("reviver")) {
+        return jogador.getEquipe().listar().stream()
+            .filter(p -> !p.estaApto())
+            .findFirst()
+            .orElse(null);
+      }
+
+      Pokemon atual = obterAtivoJogador();
+      return (atual != null && atual.estaApto()) ? atual : null;
+  }
   private Pokemon encontrarProximoApto(List<Pokemon> lista) {
     return lista.stream().filter(Pokemon::estaApto).findFirst().orElse(null);
   }

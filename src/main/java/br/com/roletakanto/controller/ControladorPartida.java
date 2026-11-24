@@ -1,9 +1,13 @@
 package br.com.roletakanto.controller;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import br.com.roletakanto.model.Batalha;
+import br.com.roletakanto.model.ContextoUsoItem;
 import br.com.roletakanto.model.Equipe;
 import br.com.roletakanto.model.EspeciePokemon;
 import br.com.roletakanto.model.FasePartida;
@@ -17,6 +21,8 @@ import br.com.roletakanto.model.ResultadoRoleta;
 import br.com.roletakanto.model.ResultadoUsoItem;
 import br.com.roletakanto.model.Rota;
 import br.com.roletakanto.model.TipoEvento;
+import br.com.roletakanto.persistence.RepositorioPartida;
+import br.com.roletakanto.persistence.RepositorioPartidaArquivo;
 import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.CatalogoJogo;
 import br.com.roletakanto.service.SeletorAcaoIA;
@@ -24,36 +30,49 @@ import br.com.roletakanto.service.SeletorAcaoIA;
 /** Coordena os comandos da partida e aplica os resultados da roleta. */
 public final class ControladorPartida {
   private final CatalogoJogo catalogo;
+  private final RepositorioPartida repositorio;
   private final Random random;
   private final Map<String, EspeciePokemon> especies;
   private final Map<String, Item> itens;
   private Partida partida;
 
   public ControladorPartida() {
-    this(new CatalogoJogo(), new Random());
+    this(
+        new CatalogoJogo(),
+        new RepositorioPartidaArquivo(Path.of("saves", "partida.dat")),
+        new Random());
   }
 
   public ControladorPartida(CatalogoJogo catalogo, Random random) {
-    if (catalogo == null || random == null) {
-      throw new IllegalArgumentException("Catalogo e gerador aleatorio sao obrigatorios.");
+    this(catalogo, new RepositorioPartidaArquivo(Path.of("saves", "partida.dat")), random);
+  }
+
+  public ControladorPartida(
+      CatalogoJogo catalogo, RepositorioPartida repositorio, Random random) {
+    if (catalogo == null || repositorio == null || random == null) {
+      throw new IllegalArgumentException(
+          "Catalogo, repositorio e gerador aleatorio sao obrigatorios.");
     }
 
     this.catalogo = catalogo;
+    this.repositorio = repositorio;
     this.random = random;
     this.especies = catalogo.carregarEspecies();
-    this.itens = catalogo.criarItens().stream()
-        .collect(java.util.stream.Collectors.toUnmodifiableMap(Item::getId, item -> item));
+    this.itens =
+        catalogo.criarItens().stream()
+            .collect(Collectors.toUnmodifiableMap(Item::getId, item -> item));
   }
 
   /** Cria uma campanha e coloca o Pokemon inicial na equipe do jogador. */
   public void novaPartida(String idInicial) {
     Item pocao = itens.get(CatalogoJogo.ID_POCAO);
     Mochila mochila = new Mochila();
-    if(pocao == null) {
+    if (pocao == null) {
       throw new IllegalStateException("Item de pocao nao encontrado no catalogo.");
-    }else{
+    } else {
       mochila.adicionar(pocao, 2);
     }
+
     EspeciePokemon inicial = especies.get(idInicial);
     if (inicial == null) {
       throw new IllegalArgumentException("Pokemon inicial inexistente: " + idInicial);
@@ -92,6 +111,7 @@ public final class ControladorPartida {
     if(partida.getFase() != FasePartida.ROTA) {
       return ResultadoGiro.falha("A roleta sÃ³ pode ser girada durante a fase de rota.");
     }
+
     Rota rota = partida.getRotaAtual();
     if (!rota.temGiroDisponivel()) {
       return ResultadoGiro.falha("Sem giros disponÃ­veis em " + rota.getNome() + ".");
@@ -179,46 +199,166 @@ public final class ControladorPartida {
     if (partida == null) {
       return "Inicie uma partida antes de usar a Pokebola Dourada.";
     }
-    if(!partida.podeContinuar()) {
+    if (!partida.podeContinuar()) {
       return "A partida terminou. Inicie uma nova para continuar jogando.";
     }
-    if(partida.getFase() != FasePartida.ROTA) {
+    if (partida.getFase() != FasePartida.ROTA) {
       return "A Pokebola Dourada so pode ser usada durante a fase de rota.";
     }
 
-    ResultadoUsoItem resultado = partida.getJogador().getMochila().usar(
-        CatalogoJogo.ID_POKEBOLA_DOURADA,
-        new br.com.roletakanto.model.ContextoUsoItem(partida, null, null));
+    ResultadoUsoItem resultado =
+        partida
+            .getJogador()
+            .getMochila()
+            .usar(
+                CatalogoJogo.ID_POKEBOLA_DOURADA,
+                new ContextoUsoItem(partida, null, null));
     if (!resultado.sucesso()) {
       return resultado.mensagem();
     }
 
-    return resultado.mensagem() + " Giros restantes: "
-        + partida.getRotaAtual().getGirosRestantes();
+    return resultado.mensagem() + " Giros restantes: " + partida.getRotaAtual().getGirosRestantes();
   }
 
   public void moverParaEquipe(String idPokemon) {
-    /* Etapa posterior. */
+    validarReorganizacaoEquipe("mover um Pokemon para a equipe");
+    if (partida
+            .getJogador()
+            .getReserva()
+            .transferir(idPokemon, partida.getJogador().getEquipe())
+        == null) {
+      throw new IllegalStateException("Nao foi possivel mover o Pokemon para a equipe.");
+    }
   }
 
   public void moverParaReserva(String idPokemon) {
-    /* Etapa posterior. */
+    validarReorganizacaoEquipe("mover um Pokemon para a reserva");
+    Equipe equipe = partida.getJogador().getEquipe();
+    Pokemon alvo = equipe.obterPorId(idPokemon);
+    if (alvo != null && alvo.estaApto() && equipe.contarAptos() <= 1) {
+      throw new IllegalStateException("A equipe precisa manter ao menos um Pokemon apto.");
+    }
+    if (equipe.transferir(idPokemon, partida.getJogador().getReserva()) == null) {
+      throw new IllegalStateException("Nao foi possivel mover o Pokemon para a reserva.");
+    }
+  }
+
+  private void validarReorganizacaoEquipe(String acao) {
+    if (partida == null) {
+      throw new IllegalStateException("Inicie uma partida antes de " + acao + ".");
+    }
+    if (!partida.podeContinuar()) {
+      throw new IllegalStateException("A partida terminou. Inicie uma nova para continuar jogando.");
+    }
+    if (partida.getFase() != FasePartida.ROTA && partida.getFase() != FasePartida.ORGANIZACAO) {
+      throw new IllegalStateException(
+          "So e possivel " + acao + " durante a rota ou organizacao.");
+    }
   }
 
   public void confirmarBatalha() {
     if (partida == null) {
-      throw new IllegalStateException("Inicie uma partida antes de confirmar a batalha.");
+          throw new IllegalStateException("Inicie uma partida antes de confirmar a batalha.");
+        }
+        prepararBatalhaAtual();
+      }
+
+      private void prepararBatalhaAtual() {
+        partida.iniciarBatalha();
+        Batalha batalha =
+            new Batalha(
+                partida,
+                partida.getJogador(),
+                partida.getLiderAtual(),
+                new CalculadoraDano(),
+                new SeletorAcaoIA());
+        partida.definirBatalhaAtual(batalha);
+  }
+
+  public void navegarParaFase(FasePartida fase) {
+    if (partida == null) {
+      throw new IllegalStateException("Inicie uma partida antes de navegar entre fases.");
     }
-    partida.iniciarBatalha();
-    Batalha batalha = new Batalha(partida, partida.getJogador(), partida.getLiderAtual(), new CalculadoraDano(), new SeletorAcaoIA());
-    partida.definirBatalhaAtual(batalha);
+    if (fase == null) {
+      throw new IllegalArgumentException("A fase de destino não pode ser nula.");
+    }
+
+    partida.validarEstado();
+
+    switch (fase) {
+      case ROTA -> {
+        if (partida.getFase() == FasePartida.ORGANIZACAO) {
+          partida.voltarParaRota();
+        } else if (partida.getFase() != FasePartida.ROTA) {
+          throw new IllegalStateException(
+              "Não é possível ir para ROTA a partir da fase " + partida.getFase() + ".");
+        }
+      }
+      case ORGANIZACAO -> {
+        if (partida.getFase() == FasePartida.ROTA) {
+          partida.iniciarOrganizacao();
+        } else if (partida.getFase() != FasePartida.ORGANIZACAO) {
+          throw new IllegalStateException(
+              "Não é possível ir para ORGANIZACAO a partir da fase " + partida.getFase() + ".");
+        }
+      }
+      case BATALHA -> {
+        if (partida.getFase() != FasePartida.BATALHA) {
+          prepararBatalhaAtual();
+        } else if (partida.getBatalhaAtual() == null) {
+          Batalha batalha =
+              new Batalha(
+                  partida,
+                  partida.getJogador(),
+                  partida.getLiderAtual(),
+                  new CalculadoraDano(),
+                  new SeletorAcaoIA());
+          partida.definirBatalhaAtual(batalha);
+        }
+      }
+      case MENU, ESCOLHA_INICIAL, VITORIA_GINASIO, DERROTA, VITORIA_FINAL -> {
+        if (partida.getFase() != fase) {
+          throw new IllegalStateException(
+              "Nï¿½o ï¿½ possï¿½vel transicionar manualmente para a fase " + fase + ".");
+        }
+      }
+    }
   }
 
   public void continuarPartida() {
-    /* Etapa posterior. */
+    if (repositorio == null) {
+      throw new IllegalStateException("Repositório de salvamento não configurado.");
+    }
+
+    try {
+      Partida partidaSalva =
+          repositorio
+              .carregar()
+              .orElseThrow(
+                  () -> new IllegalStateException("Nenhuma gravação encontrada para continuar."));
+
+      partidaSalva.validarEstado();
+      this.partida = partidaSalva;
+      navegarParaFase(partidaSalva.getFase());
+    } catch (IOException e) {
+      throw new IllegalStateException("Não foi possível carregar a gravação salva.", e);
+    }
   }
 
   public void salvarPartida() {
-    /* Etapa posterior. */
+    if (repositorio == null) {
+      throw new IllegalStateException("Repositório de salvamento não configurado.");
+    }
+    if (partida == null) {
+      throw new IllegalStateException("Inicie uma partida antes de salvar.");
+    }
+
+    partida.validarEstado();
+
+    try {
+      repositorio.salvar(partida);
+    } catch (IOException e) {
+      throw new IllegalStateException("Não foi possível salvar a partida.", e);
+    }
   }
 }

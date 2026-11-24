@@ -1,42 +1,47 @@
 package br.com.roletakanto;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.com.roletakanto.controller.ControladorBatalha;
 import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.model.Batalha;
 import br.com.roletakanto.model.FasePartida;
+import br.com.roletakanto.model.Golpe;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoBatalha;
 import br.com.roletakanto.model.ResultadoTurno;
 import br.com.roletakanto.service.CatalogoJogo;
 import java.util.List;
 import java.util.Random;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+class TesteCenariosBatalha {
 
-public final class TesteCenariosBatalha {
+  private CatalogoJogo catalogo;
+  private String idInicial;
+
+  @BeforeEach
+  void preparar() {
+    catalogo = new CatalogoJogo();
+    idInicial = catalogo.carregarEspecies().keySet().iterator().next();
+  }
 
   @Test
-  public void verificarCenariosBatalha() {
-    main(new String[0]);
-  }
-
-  public static void main(String[] args) {
-    CatalogoJogo catalogo = new CatalogoJogo();
-    String idInicial = catalogo.carregarEspecies().keySet().iterator().next();
-
-    testarUsoItemETroca(catalogo, idInicial);
-    testarDesistencia(catalogo, idInicial);
-    testarVitoria(catalogo, idInicial);
-
-    System.out.println("=== TODOS OS CENARIOS EXTRAS CONCLUIDOS ===");
-  }
-
-  private static void testarUsoItemETroca(CatalogoJogo catalogo, String idInicial) {
-    System.out.println("--- Cenario 1: Uso de Item e Troca ---");
+  void deveUsarItemETrocarPokemonDuranteBatalha() {
     ControladorPartida cp = new ControladorPartida(catalogo, new Random(10L));
     ControladorBatalha cb = new ControladorBatalha();
 
     cp.novaPartida(idInicial);
+    // Adiciona um segundo Pokémon apto para garantir o cenário de troca
+    cp.getPartida()
+        .getJogador()
+        .getEquipe()
+        .adicionar(catalogo.carregarEspecies().get("pidgey").criarInstancia());
+
     cb.definirPartida(cp.getPartida());
     cp.confirmarBatalha();
 
@@ -45,37 +50,32 @@ public final class TesteCenariosBatalha {
     String idGolpe = ativo.getEspecie().getGolpes().get(0).getId();
 
     ResultadoTurno r1 = cb.executarGolpe(idGolpe);
-    imprimirMensagens(r1);
+    assertNotNull(r1);
 
     int pocoesAntes = quantidadeItens(cp, CatalogoJogo.ID_POCAO);
     if (r1.resultado() == ResultadoBatalha.EM_ANDAMENTO && pocoesAntes > 0) {
       ResultadoTurno rItem = cb.usarItem(CatalogoJogo.ID_POCAO);
       int pocoesDepois = quantidadeItens(cp, CatalogoJogo.ID_POCAO);
-      System.out.println("[OK] Uso de pocao executado. Pocoes antes: " + pocoesAntes
-          + ", depois: " + pocoesDepois);
-      imprimirMensagens(rItem);
+      assertNotNull(rItem);
+      assertEquals(pocoesAntes - 1, pocoesDepois);
     }
 
     List<Pokemon> equipe = cp.getPartida().getJogador().getEquipe().listar();
-    Pokemon substituto = null;
-    for (Pokemon p : equipe) {
-      if (p != batalha.obterAtivoJogador() && p.estaApto()) {
-        substituto = p;
-        break;
-      }
-    }
+    Pokemon substituto =
+        equipe.stream()
+            .filter(p -> p != batalha.obterAtivoJogador() && p.estaApto())
+            .findFirst()
+            .orElse(null);
 
     if (substituto != null && batalha.verificarResultado() == ResultadoBatalha.EM_ANDAMENTO) {
       ResultadoTurno rTroca = cb.trocarPokemon(substituto.getId());
-      System.out.println("[OK] Troca executada para: " + substituto.getEspecie().getNome());
-      imprimirMensagens(rTroca);
-    } else {
-      System.out.println("[INFO] Sem segundo Pokemon apto na equipe ativa para testar troca neste cenario.");
+      assertNotNull(rTroca);
+      assertEquals(substituto.getId(), batalha.obterAtivoJogador().getId());
     }
   }
 
-  private static void testarDesistencia(CatalogoJogo catalogo, String idInicial) {
-    System.out.println("--- Cenario 2: Desistencia ---");
+  @Test
+  void deveEncerrarBatalhaEPartidaComDerrotaAoDesistir() {
     ControladorPartida cp = new ControladorPartida(catalogo, new Random(20L));
     ControladorBatalha cb = new ControladorBatalha();
 
@@ -86,24 +86,21 @@ public final class TesteCenariosBatalha {
     Batalha batalha = cp.getPartida().getBatalhaAtual();
     cb.desistir();
 
-    if (batalha.verificarResultado() != ResultadoBatalha.DERROTA) {
-      throw new AssertionError("A desistencia deveria finalizar a batalha com DERROTA.");
-    }
-    if (cp.getPartida().getFase() != FasePartida.DERROTA) {
-      throw new AssertionError("A fase da partida deveria ser DERROTA apos a desistencia.");
-    }
-    if (cp.getPartida().getBatalhaAtual() != null) {
-      throw new AssertionError("A batalha atual deveria ser limpa apos a desistencia.");
-    }
-
-    System.out.println("[OK] Desistencia executada. Resultado da batalha: "
-        + batalha.verificarResultado()
-        + " | Fase da partida: " + cp.getPartida().getFase()
-        + " | Batalha atual encerrada.");
+    assertEquals(
+        ResultadoBatalha.DERROTA,
+        batalha.verificarResultado(),
+        "A desistência deveria finalizar a batalha com DERROTA.");
+    assertEquals(
+        FasePartida.DERROTA,
+        cp.getPartida().getFase(),
+        "A fase da partida deveria ser DERROTA após a desistência.");
+    assertNull(
+        cp.getPartida().getBatalhaAtual(),
+        "A batalha atual deveria ser limpa após a desistência.");
   }
 
-  private static void testarVitoria(CatalogoJogo catalogo, String idInicial) {
-    System.out.println("--- Cenario 3: Tentativa de Vitoria ---");
+  @Test
+  void deveExecutarLoopDeBatalhaAteDesfechoValido() {
     ControladorPartida cp = new ControladorPartida(catalogo, new Random(30L));
     ControladorBatalha cb = new ControladorBatalha();
 
@@ -129,40 +126,28 @@ public final class TesteCenariosBatalha {
           && pocoes > 0) {
         ultimo = cb.usarItem(CatalogoJogo.ID_POCAO);
       } else {
-        String idGolpe = escolherMelhorGolpe(ativo);
+        String idGolpe = escolherGolpeDisponivel(batalha, ativo);
         ultimo = cb.executarGolpe(idGolpe);
       }
       turnos++;
     }
 
-    ResultadoBatalha resFinal = (ultimo != null)
-        ? ultimo.resultado()
-        : cp.getPartida().getBatalhaAtual().verificarResultado();
-    System.out.println("[OK] Fim do loop em " + turnos + " turnos. Resultado: " + resFinal
-        + " | Fase da partida: " + cp.getPartida().getFase());
+    assertTrue(turnos > 0 && turnos <= limiteSeguranca);
+    assertTrue(
+        cp.getPartida().getFase() == FasePartida.ROTA
+            || cp.getPartida().getFase() == FasePartida.DERROTA);
   }
 
-  private static String escolherMelhorGolpe(Pokemon ativo) {
-    if (ativo.getEspecie().getGolpes().size() > 1) {
-      return ativo.getEspecie().getGolpes().get(1).getId();
+  private String escolherGolpeDisponivel(Batalha batalha, Pokemon ativo) {
+    List<Golpe> golpes = ativo.getEspecie().getGolpes();
+    if (golpes.size() > 1 && batalha.possuiUsoDisponivel(ativo, golpes.get(1))) {
+      return golpes.get(1).getId();
     }
-    return ativo.getEspecie().getGolpes().get(0).getId();
+    return golpes.get(0).getId();
   }
 
-  private static int quantidadeItens(ControladorPartida controlador, String idItem) {
-    var pilha = controlador.getPartida()
-        .getJogador()
-        .getMochila()
-        .obterPilhaPorId(idItem);
+  private int quantidadeItens(ControladorPartida controlador, String idItem) {
+    var pilha = controlador.getPartida().getJogador().getMochila().obterPilhaPorId(idItem);
     return pilha == null ? 0 : pilha.getQuantidade();
-  }
-
-  private static void imprimirMensagens(ResultadoTurno resultado) {
-    if (resultado == null) {
-      return;
-    }
-    for (String msg : resultado.mensagens()) {
-      System.out.println("  " + msg);
-    }
   }
 }
