@@ -308,10 +308,10 @@ public final class ControladorPartida {
           partida.definirBatalhaAtual(batalha);
         }
       }
-      case DERROTA, VITORIA_FINAL -> {
+      case MENU, ESCOLHA_INICIAL, VITORIA_GINASIO, DERROTA, VITORIA_FINAL -> {
         if (partida.getFase() != fase) {
           throw new IllegalStateException(
-              "Não é possível transicionar manualmente para a fase final " + fase + ".");
+              "Nï¿½o ï¿½ possï¿½vel transicionar manualmente para a fase " + fase + ".");
         }
       }
     }

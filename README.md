@@ -50,6 +50,16 @@ mvn clean package
 java -jar target/roleta-kanto-1.0.0.jar
 ```
 
+### Versão jogável pelo terminal
+
+Para jogar sem abrir janelas, execute `MainTerminal` pela IDE ou use Maven:
+
+```powershell
+mvn -q -Dexec.mainClass=br.com.roletakanto.app.MainTerminal org.codehaus.mojo:exec-maven-plugin:3.5.0:java
+```
+
+Essa versão oferece nova partida e continuação, escolha do inicial, roleta, organização da equipe e batalhas. O salvamento é separado da interface gráfica e fica em `saves/partida-terminal.dat`.
+
 ### Compilar e rodar os testes
 
 ```powershell

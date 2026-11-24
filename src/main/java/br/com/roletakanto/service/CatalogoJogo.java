@@ -45,7 +45,7 @@ public final class CatalogoJogo {
     adicionar(especies, especie("pidgey", "Pidgey", TipoPokemon.NORMAL, 48, 14, 10, 18));
     adicionar(especies, especie("rattata", "Rattata", TipoPokemon.NORMAL, 45, 17, 8, 20));
     adicionar(especies, especie("pikachu", "Pikachu", TipoPokemon.ELETRICO, 52, 20, 9, 21));
-    adicionar(especies, especie("zubat", "Zubat", TipoPokemon.NORMAL, 50, 15, 11, 19));
+    adicionar(especies, especie("zubat", "Zubat", TipoPokemon.VOADOR, 50, 15, 11, 19));
     adicionar(especies, especie("geodude", "Geodude", TipoPokemon.ROCHA, 60, 20, 20, 5));
     adicionar(especies, especie("sandshrew", "Sandshrew", TipoPokemon.ROCHA, 58, 17, 17, 9));
     adicionar(especies, especie("oddish", "Oddish", TipoPokemon.PLANTA, 55, 17, 14, 8));

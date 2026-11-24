@@ -15,10 +15,18 @@ public final class Partida implements Serializable {
 
   private Partida(Jogador jogador, List<Rota> rotas, List<LiderGinasio> lideres) {
     this.jogador = jogador;
-    this.rotas = List.copyOf(rotas);
+    this.rotas = new ArrayList<>(rotas);
     this.lideres = List.copyOf(lideres);
     this.indiceRota = 0;
     this.fase = FasePartida.ROTA;
+  }
+
+  public List<Rota> getRotas() {
+    return rotas;
+  }
+
+  public int getIndiceRotaAtual() {
+    return indiceRota;
   }
 
   public static Partida nova(Jogador jogador, List<Rota> rotas, List<LiderGinasio> lideres) {

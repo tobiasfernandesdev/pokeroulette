@@ -1,6 +1,10 @@
 package br.com.roletakanto;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.com.roletakanto.controller.ControladorBatalha;
 import br.com.roletakanto.controller.ControladorPartida;
@@ -10,75 +14,81 @@ import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoBatalha;
 import br.com.roletakanto.model.ResultadoTurno;
 import br.com.roletakanto.service.CatalogoJogo;
+import java.util.Random;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public final class TesteFluxoBatalha {
+class TesteFluxoBatalha {
 
-  // O Maven chama o mesmo cenÃ¡rio que pode ser executado pela classe diretamente.
-  @Test
-  public void verificarFluxoBatalha() {
-    main(new String[0]);
+  private CatalogoJogo catalogo;
+  private String idInicial;
+  private ControladorPartida controladorPartida;
+  private ControladorBatalha controladorBatalha;
+
+  @BeforeEach
+  void preparar() {
+    catalogo = new CatalogoJogo();
+    idInicial = catalogo.carregarEspecies().keySet().iterator().next();
+    controladorPartida = new ControladorPartida(catalogo, new Random(42L));
+    controladorBatalha = new ControladorBatalha();
   }
 
-  public static void main(String[] args) {
-    CatalogoJogo catalogo = new CatalogoJogo();
-    String idInicial = catalogo.carregarEspecies().keySet().iterator().next();
+  @Test
+  void deveBloquearExecucaoDeGolpeSemBatalhaAtiva() {
+    assertThrows(
+        IllegalStateException.class,
+        () -> controladorBatalha.executarGolpe("golpe-1"),
+        "Deveria falhar sem partida ou batalha ativa.");
+  }
 
-    ControladorPartida controladorPartida = new ControladorPartida(catalogo, new java.util.Random(42L));
-    ControladorBatalha controladorBatalha = new ControladorBatalha();
-
-    // 1. Verifica bloqueio antes de iniciar batalha
-    try {
-      controladorBatalha.executarGolpe("golpe-1");
-      throw new AssertionError("Deveria falhar sem partida ou batalha ativa.");
-    } catch (IllegalStateException expected) {
-      System.out.println("[OK] Bloqueio antes da batalha: " + expected.getMessage());
-    }
-
-    // 2. Inicia partida e confere estado inicial + 2 pocoes na mochila
+  @Test
+  void deveIniciarPartidaComDoisPocoesEConcluirBatalha() {
     controladorPartida.novaPartida(idInicial);
     controladorBatalha.definirPartida(controladorPartida.getPartida());
 
-    if (controladorPartida.getPartida().getFase() != FasePartida.ROTA) {
-      throw new AssertionError("Fase inicial deveria ser ROTA.");
-    }
+    assertEquals(
+        FasePartida.ROTA,
+        controladorPartida.getPartida().getFase(),
+        "Fase inicial deveria ser ROTA.");
 
-    PilhaItem pilhaPocoes = controladorPartida.getPartida()
-        .getJogador()
-        .getMochila()
-        .obterPilhaPorId(CatalogoJogo.ID_POCAO);
+    PilhaItem pilhaPocoes =
+        controladorPartida.getPartida().getJogador().getMochila().obterPilhaPorId(CatalogoJogo.ID_POCAO);
     int qtdPocoes = pilhaPocoes == null ? 0 : pilhaPocoes.getQuantidade();
-    if (qtdPocoes != 2) {
-      throw new AssertionError("Mochila deveria iniciar com 2 pocoes, mas encontrou: " + qtdPocoes);
-    }
-    System.out.println("[OK] Partida iniciada em ROTA com " + qtdPocoes + " pocoes na mochila.");
+    assertEquals(
+        2,
+        qtdPocoes,
+        "Mochila deveria iniciar com 2 poções, mas encontrou: " + qtdPocoes);
 
-    // 3. Confirma batalha e executa turnos ate o encerramento
     controladorPartida.confirmarBatalha();
-    if (!controladorBatalha.batalhaAtiva()) {
-      throw new AssertionError("Batalha deveria estar ativa apos confirmarBatalha().");
-    }
-    System.out.println("[OK] Batalha confirmada e ativa contra "
-        + controladorPartida.getPartida().getBatalhaAtual().getLider().getNome() + ".");
+    assertTrue(
+        controladorBatalha.batalhaAtiva(),
+        "Batalha deveria estar ativa após confirmarBatalha().");
 
     ResultadoTurno ultimoResultado = null;
-    int turno = 1;
+    int turnos = 0;
+    int limiteSeguranca = 100;
 
-    while (ultimoResultado == null || ultimoResultado.resultado() == ResultadoBatalha.EM_ANDAMENTO) {
+    while ((ultimoResultado == null || ultimoResultado.resultado() == ResultadoBatalha.EM_ANDAMENTO)
+        && turnos < limiteSeguranca) {
       Pokemon ativoJogador = controladorPartida.getPartida().getBatalhaAtual().obterAtivoJogador();
-      if (ativoJogador == null || ativoJogador.getEspecie().getGolpes().isEmpty()) {
-        throw new AssertionError("Pokemon ativo do jogador sem golpes disponiveis.");
-      }
-      String idGolpe = ativoJogador.getEspecie().getGolpes().get(0).getId();
+      assertNotNull(ativoJogador, "Deveria haver um Pokémon ativo apto durante a batalha.");
+      assertFalse(
+          ativoJogador.getEspecie().getGolpes().isEmpty(),
+          "Pokémon ativo do jogador sem golpes disponíveis.");
 
-      System.out.println("--- Turno " + turno + " ---");
+      String idGolpe = ativoJogador.getEspecie().getGolpes().get(0).getId();
       ultimoResultado = controladorBatalha.executarGolpe(idGolpe);
-      for (String mensagem : ultimoResultado.mensagens()) {
-        System.out.println("  " + mensagem);
-      }
-      turno++;
+      assertNotNull(ultimoResultado);
+      turnos++;
     }
 
-    System.out.println("[FIM] Resultado da batalha: " + ultimoResultado.resultado());
-    System.out.println("[FIM] Fase atual da partida: " + controladorPartida.getPartida().getFase());
+    assertNotNull(ultimoResultado);
+    assertTrue(
+        ultimoResultado.resultado() == ResultadoBatalha.VITORIA
+            || ultimoResultado.resultado() == ResultadoBatalha.DERROTA,
+        "A batalha deveria encerrar com VITÓRIA ou DERROTA.");
+    assertTrue(
+        controladorPartida.getPartida().getFase() == FasePartida.ROTA
+            || controladorPartida.getPartida().getFase() == FasePartida.DERROTA);
   }
 }
