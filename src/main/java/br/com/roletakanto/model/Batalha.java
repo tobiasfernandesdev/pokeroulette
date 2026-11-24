@@ -133,7 +133,7 @@ public final class Batalha implements Serializable {
       Pokemon liderAtivo = getAtivoLider();
 
       if (jogadorAtivo == null || !jogadorAtivo.estaApto()) {
-        return criarResultadoInvalido("Nenhum PokÈmon apto para atacar.");
+        return criarResultadoInvalido("Nenhum Pok√©mon apto para atacar.");
       }
       if (liderAtivo == null || !liderAtivo.estaApto()) {
         return finalizarTurno(mensagens);
@@ -141,11 +141,11 @@ public final class Batalha implements Serializable {
 
       Golpe golpeJogador = buscarGolpe(jogadorAtivo, acao.idAlvo());
       if (golpeJogador == null) {
-        return criarResultadoInvalido("Golpe inv·lido.");
+        return criarResultadoInvalido("Golpe inv√°lido.");
       }
       if (!possuiUsoDisponivel(jogadorAtivo, golpeJogador)) {
         return criarResultadoInvalido(
-            "O golpe " + golpeJogador.getNome() + " n„o tem mais usos restantes.");
+            "O golpe " + golpeJogador.getNome() + " n√£o tem mais usos restantes.");
       }
 
       AcaoBatalha acaoIA = ia.escolher(this);

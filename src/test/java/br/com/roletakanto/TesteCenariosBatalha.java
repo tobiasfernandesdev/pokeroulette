@@ -36,7 +36,7 @@ class TesteCenariosBatalha {
     ControladorBatalha cb = new ControladorBatalha();
 
     cp.novaPartida(idInicial);
-    // Adiciona um segundo Pokémon apto para garantir o cenário de troca
+    // Adiciona um segundo PokÃ©mon apto para garantir o cenÃ¡rio de troca
     cp.getPartida()
         .getJogador()
         .getEquipe()
@@ -89,14 +89,14 @@ class TesteCenariosBatalha {
     assertEquals(
         ResultadoBatalha.DERROTA,
         batalha.verificarResultado(),
-        "A desistência deveria finalizar a batalha com DERROTA.");
+        "A desistÃªncia deveria finalizar a batalha com DERROTA.");
     assertEquals(
         FasePartida.DERROTA,
         cp.getPartida().getFase(),
-        "A fase da partida deveria ser DERROTA após a desistência.");
+        "A fase da partida deveria ser DERROTA apÃ³s a desistÃªncia.");
     assertNull(
         cp.getPartida().getBatalhaAtual(),
-        "A batalha atual deveria ser limpa após a desistência.");
+        "A batalha atual deveria ser limpa apÃ³s a desistÃªncia.");
   }
 
   @Test

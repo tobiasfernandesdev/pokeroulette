@@ -1,8 +1,9 @@
 package br.com.roletakanto;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -14,7 +15,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.controller.ResultadoGiro;
@@ -59,6 +60,15 @@ public final class TesteRoletaTela {
       assertNotNull(procurarTexto(painel, "BULBASAUR"));
       assertNotNull(procurarTexto(painel, "BROCK"));
       assertNotNull(procurarTexto(painel, "x2"));
+      JLabel pocao = procurarTexto(painel, "Poção");
+      assertNotNull(pocao);
+      assertTrue(java.util.Arrays.stream(pocao.getParent().getComponents())
+          .anyMatch(componente -> componente instanceof JLabel miniatura && miniatura.getIcon() != null));
+      painel.mostrarResultado(br.com.roletakanto.model.ResultadoRoleta.item("pocao"));
+      assertNotNull(procurarTexto(painel, "✦ POÇÃO ✦").getIcon());
+      painel.iniciarAnimacao();
+      assertNull(procurarTexto(painel, "A RODA MÁGICA ESTÁ GIRANDO...").getIcon());
+      painel.pararAnimacao();
       JButton girar = procurarBotao(painel, "GIRAR");
       assertNotNull(girar);
       assertTrue(girar.isEnabled());
@@ -68,6 +78,23 @@ public final class TesteRoletaTela {
     assertTrue(visuais.recursoExiste("bulbasaur"));
     assertTrue(visuais.recursoExiste("charmander"));
     assertTrue(visuais.recursoExiste("squirtle"));
+  }
+
+  @Test
+  public void catalogoInteiroTemImagensLegiveisNoClasspath() {
+    CatalogoJogo catalogo = new CatalogoJogo();
+    VisualPokemon visuais = new VisualPokemon();
+    for (String id : catalogo.carregarEspecies().keySet()) {
+      assertNotNull(visuais.carregarIcone(id, 64, 64), "Pokémon sem imagem: " + id);
+    }
+    for (var item : catalogo.criarItens()) {
+      assertNotNull(visuais.carregarItem(item.getId(), 24, 24), "Item sem imagem: " + item.getId());
+    }
+    for (var lider : catalogo.criarLideres()) {
+      assertNotNull(visuais.carregarLider(lider.getId(), 145, 170), "Líder sem imagem: " + lider.getId());
+    }
+    assertNotNull(visuais.carregarCenario("arena", 753, 500));
+    assertNull(visuais.carregarItem("arquivo_inexistente", 24, 24));
   }
 
   private static void organizar(Container container) {

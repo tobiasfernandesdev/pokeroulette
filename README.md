@@ -39,6 +39,8 @@ mvn -Pprevia-menu javafx:run
 
 No **Eclipse**, clique com o botão direito no projeto e escolha **Run As > Maven build...**. Preencha **Goals** com `javafx:run`, **Profiles** com `previa-menu` e selecione na aba **JRE** o JDK do projeto. O perfil se aplica a essa execução da prévia. No **VS Code**, use o mesmo comando no terminal da pasta do projeto se o Maven estiver disponível no PATH.
 
+Os sprites de Pokémon, itens e líderes usados na rota ficam em `src/main/resources/assets` e funcionam sem internet. As fontes, versões e condições de uso estão em [Créditos das imagens](src/main/resources/assets/CREDITOS.md). A arena aparece atrás do próximo líder; a mochila e o resultado do giro exibem ícones dos itens.
+
 ### Janela inicial provisória
 
 Na IDE, execute a classe `Main` para abrir a janela inicial simples. A classe `RoletaKantoApp` encaminha para a mesma entrada.

@@ -88,7 +88,7 @@ class TesteCampanhaERegrasBatalha {
       }
 
       if (partida.getFase() == FasePartida.DERROTA) {
-        // Se o inicial sozinho perder em alguma seed, valida o bloqueio pós-derrota
+        // Se o inicial sozinho perder em alguma seed, valida o bloqueio pÃ³s-derrota
         assertFalse(partida.podeContinuar());
         assertThrows(IllegalStateException.class, controladorPartida::confirmarBatalha);
         return;

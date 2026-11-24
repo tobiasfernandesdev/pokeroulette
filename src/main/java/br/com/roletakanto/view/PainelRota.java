@@ -55,7 +55,7 @@ public final class PainelRota extends JPanel {
   private final JLabel reserva = criarTexto("RESERVA 0 / 6", 10, EstiloJogo.ROXO);
   private final JLabel nomeLider = criarTexto("PRÓXIMO LÍDER", 15, EstiloJogo.ROXO_ESCURO);
   private final JLabel tipoLider = criarTexto("TIPO —", 11, EstiloJogo.ROXO);
-  private final JLabel spriteLider = new JLabel("?", SwingConstants.CENTER);
+  private final JLabel spriteLider = new RetratoLider();
   private final JLabel destaqueResultado = criarTexto("PRÊMIOS DA ROTA", 15, EstiloJogo.ROXO);
   private final JTextArea mensagens = new JTextArea(
       "Escolha GIRAR para descobrir o próximo encontro.");
@@ -139,6 +139,7 @@ public final class PainelRota extends JPanel {
     botaoMochila.setEnabled(false);
     botaoAvancar.setEnabled(false);
     destaqueResultado.setText("A RODA MÁGICA ESTÁ GIRANDO...");
+    destaqueResultado.setIcon(null);
     destaqueResultado.setForeground(EstiloJogo.MAGENTA);
   }
 
@@ -156,6 +157,8 @@ public final class PainelRota extends JPanel {
   public void mostrarResultado(ResultadoRoleta resultado) {
     desenhador.definirResultado(resultado);
     destaqueResultado.setText("✦ " + nomeResultado(resultado) + " ✦");
+    destaqueResultado.setIcon(resultado == null ? null
+        : visuais.carregarPremio(resultado.tipo(), resultado.idConteudo(), 32));
     destaqueResultado.setForeground(EstiloJogo.ROXO);
   }
 
@@ -448,6 +451,13 @@ public final class PainelRota extends JPanel {
         linha.setBorder(EstiloJogo.bordaComMargem(EstiloJogo.ROXO, EstiloJogo.LAVANDA, 5));
         linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         linha.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // A imagem acompanha o nome: mesmo sem um arquivo, o item continua legível.
+        ImageIcon icone = visuais.carregarItem(pilha.getItem().getId(), 24, 24);
+        if (icone != null) {
+          JLabel imagem = new JLabel(icone);
+          imagem.setToolTipText(pilha.getItem().getNome());
+          linha.add(imagem, BorderLayout.WEST);
+        }
         linha.add(criarTexto(pilha.getItem().getNome(), 10, EstiloJogo.ROXO_ESCURO), BorderLayout.CENTER);
         JLabel quantidade = criarTexto("x" + pilha.getQuantidade(), 12, EstiloJogo.MAGENTA);
         linha.add(quantidade, BorderLayout.EAST);

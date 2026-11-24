@@ -42,7 +42,7 @@ class TesteRoletaCapacidadesEPersistencia {
     var partida = controladorPartida.getPartida();
     var especies = catalogo.carregarEspecies();
 
-    // Preenche o restante da equipe (capacidade 3; j· tem 1 inicial)
+    // Preenche o restante da equipe (capacidade 3; j√° tem 1 inicial)
     partida.getJogador().getEquipe().adicionar(especies.get("pidgey").criarInstancia());
     partida.getJogador().getEquipe().adicionar(especies.get("rattata").criarInstancia());
 
@@ -60,7 +60,7 @@ class TesteRoletaCapacidadesEPersistencia {
             .obterPilhaPorId(CatalogoJogo.ID_POCAO)
             .getQuantidade();
 
-    // Substitui a roleta da rota atual por um segmento fixo de PokÈmon para testar a convers„o
+    // Substitui a roleta da rota atual por um segmento fixo de Pok√©mon para testar a convers√£o
     Rota rotaAtual = partida.getRotaAtual();
     Roleta roletaFixaPokemon =
         new Roleta(
@@ -78,7 +78,7 @@ class TesteRoletaCapacidadesEPersistencia {
             .obterPilhaPorId(CatalogoJogo.ID_POCAO)
             .getQuantidade();
 
-    assertTrue(saida.toLowerCase().contains("pocao") || saida.toLowerCase().contains("poÁ„o"));
+    assertTrue(saida.toLowerCase().contains("pocao") || saida.toLowerCase().contains("po√ß√£o"));
     assertEquals(pocoesAntes + 1, pocoesDepois);
   }
 
@@ -112,7 +112,7 @@ class TesteRoletaCapacidadesEPersistencia {
             .findFirst()
             .orElseThrow();
 
-    // Adiciona atÈ atingir o limite da pilha (ex.: 99) e tenta exceder
+    // Adiciona at√© atingir o limite da pilha (ex.: 99) e tenta exceder
     int espacoRestante =
         pocao.getLimitePilha()
             - mochila.obterPilhaPorId(CatalogoJogo.ID_POCAO).getQuantidade();

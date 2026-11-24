@@ -13,6 +13,7 @@ import java.awt.geom.Arc2D;
 import java.util.List;
 
 import javax.swing.JComponent;
+import javax.swing.ImageIcon;
 
 import br.com.roletakanto.model.ResultadoRoleta;
 import br.com.roletakanto.model.SegmentoRoleta;
@@ -33,6 +34,8 @@ public final class DesenhadorRoleta extends JComponent {
   };
 
   private List<SegmentoRoleta> segmentos = List.of();
+  private final VisualPokemon visuais = new VisualPokemon();
+  private List<ImageIcon> imagens = List.of();
   private double angulo;
   private ResultadoRoleta resultado;
   private boolean girando;
@@ -49,6 +52,10 @@ public final class DesenhadorRoleta extends JComponent {
 
   public void definirSegmentos(List<SegmentoRoleta> segmentos) {
     this.segmentos = segmentos == null ? List.of() : List.copyOf(segmentos);
+    // Buscamos as imagens uma vez; durante o giro só desenhamos o que já está na memória.
+    imagens = this.segmentos.stream()
+        .map(segmento -> visuais.carregarPremio(segmento.tipo(), segmento.idConteudo(), 28))
+        .toList();
     repaint();
   }
 
@@ -140,9 +147,19 @@ public final class DesenhadorRoleta extends JComponent {
       desenho.setStroke(new BasicStroke(destacado ? 5f : 2f));
       desenho.draw(new Arc2D.Double(x, y, diametro, diametro, inicio, abertura, Arc2D.PIE));
 
+      inicioAcumulado += abertura;
+    }
+
+    // Com todos os setores prontos, nenhum deles cobre a imagem do vizinho.
+    inicioAcumulado = 0;
+    for (int indice = 0; indice < segmentos.size(); indice++) {
+      SegmentoRoleta segmento = segmentos.get(indice);
+      double abertura = 360.0 * segmento.peso() / pesoTotal;
+      double inicio = 90.0 + angulo + inicioAcumulado;
       desenharRotulo(
           desenho,
           rotulo(segmento),
+          imagens.get(indice),
           x + diametro / 2,
           y + diametro / 2,
           diametro,
@@ -155,6 +172,7 @@ public final class DesenhadorRoleta extends JComponent {
   private void desenharRotulo(
       Graphics2D desenho,
       String texto,
+      ImageIcon icone,
       int centroX,
       int centroY,
       int diametro,
@@ -164,6 +182,13 @@ public final class DesenhadorRoleta extends JComponent {
     int raio = (int) (diametro * 0.34);
     int textoX = centroX + (int) Math.round(Math.cos(radianos) * raio);
     int textoY = centroY - (int) Math.round(Math.sin(radianos) * raio);
+    // Em setores apertados, priorizamos o nome. O prêmio também aparece ampliado no topo.
+    double espaco = 2 * raio * Math.sin(Math.toRadians(abertura / 2));
+    if (icone != null && diametro >= 320 && espaco >= 48) {
+      desenho.drawImage(icone.getImage(), textoX - icone.getIconWidth() / 2,
+          textoY - icone.getIconHeight(), null);
+      textoY += 13;
+    }
     String[] linhas = quebrarRotulo(texto);
     int tamanhoBase = Math.max(9, Math.min(13, diametro / 31));
     int tamanho = abertura <= 20 ? Math.max(8, tamanhoBase - 2) : tamanhoBase;

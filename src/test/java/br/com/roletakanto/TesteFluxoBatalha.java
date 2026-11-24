@@ -57,12 +57,12 @@ class TesteFluxoBatalha {
     assertEquals(
         2,
         qtdPocoes,
-        "Mochila deveria iniciar com 2 poções, mas encontrou: " + qtdPocoes);
+        "Mochila deveria iniciar com 2 poÃ§Ãµes, mas encontrou: " + qtdPocoes);
 
     controladorPartida.confirmarBatalha();
     assertTrue(
         controladorBatalha.batalhaAtiva(),
-        "Batalha deveria estar ativa após confirmarBatalha().");
+        "Batalha deveria estar ativa apÃ³s confirmarBatalha().");
 
     ResultadoTurno ultimoResultado = null;
     int turnos = 0;
@@ -71,10 +71,10 @@ class TesteFluxoBatalha {
     while ((ultimoResultado == null || ultimoResultado.resultado() == ResultadoBatalha.EM_ANDAMENTO)
         && turnos < limiteSeguranca) {
       Pokemon ativoJogador = controladorPartida.getPartida().getBatalhaAtual().obterAtivoJogador();
-      assertNotNull(ativoJogador, "Deveria haver um Pokémon ativo apto durante a batalha.");
+      assertNotNull(ativoJogador, "Deveria haver um PokÃ©mon ativo apto durante a batalha.");
       assertFalse(
           ativoJogador.getEspecie().getGolpes().isEmpty(),
-          "Pokémon ativo do jogador sem golpes disponíveis.");
+          "PokÃ©mon ativo do jogador sem golpes disponÃ­veis.");
 
       String idGolpe = ativoJogador.getEspecie().getGolpes().get(0).getId();
       ultimoResultado = controladorBatalha.executarGolpe(idGolpe);
@@ -86,7 +86,7 @@ class TesteFluxoBatalha {
     assertTrue(
         ultimoResultado.resultado() == ResultadoBatalha.VITORIA
             || ultimoResultado.resultado() == ResultadoBatalha.DERROTA,
-        "A batalha deveria encerrar com VITÓRIA ou DERROTA.");
+        "A batalha deveria encerrar com VITÃ“RIA ou DERROTA.");
     assertTrue(
         controladorPartida.getPartida().getFase() == FasePartida.ROTA
             || controladorPartida.getPartida().getFase() == FasePartida.DERROTA);

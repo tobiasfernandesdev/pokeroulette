@@ -280,7 +280,7 @@ public final class ControladorPartida {
       throw new IllegalStateException("Inicie uma partida antes de navegar entre fases.");
     }
     if (fase == null) {
-      throw new IllegalArgumentException("A fase de destino n„o pode ser nula.");
+      throw new IllegalArgumentException("A fase de destino n√£o pode ser nula.");
     }
 
     partida.validarEstado();
@@ -291,7 +291,7 @@ public final class ControladorPartida {
           partida.voltarParaRota();
         } else if (partida.getFase() != FasePartida.ROTA) {
           throw new IllegalStateException(
-              "N„o È possÌvel ir para ROTA a partir da fase " + partida.getFase() + ".");
+              "N√£o √© poss√≠vel ir para ROTA a partir da fase " + partida.getFase() + ".");
         }
       }
       case ORGANIZACAO -> {
@@ -299,7 +299,7 @@ public final class ControladorPartida {
           partida.iniciarOrganizacao();
         } else if (partida.getFase() != FasePartida.ORGANIZACAO) {
           throw new IllegalStateException(
-              "N„o È possÌvel ir para ORGANIZACAO a partir da fase " + partida.getFase() + ".");
+              "N√£o √© poss√≠vel ir para ORGANIZACAO a partir da fase " + partida.getFase() + ".");
         }
       }
       case BATALHA -> {
@@ -327,7 +327,7 @@ public final class ControladorPartida {
 
   public void continuarPartida() {
     if (repositorio == null) {
-      throw new IllegalStateException("RepositÛrio de salvamento n„o configurado.");
+      throw new IllegalStateException("Reposit√≥rio de salvamento n√£o configurado.");
     }
 
     try {
@@ -335,19 +335,19 @@ public final class ControladorPartida {
           repositorio
               .carregar()
               .orElseThrow(
-                  () -> new IllegalStateException("Nenhuma gravaÁ„o encontrada para continuar."));
+                  () -> new IllegalStateException("Nenhuma grava√ß√£o encontrada para continuar."));
 
       partidaSalva.validarEstado();
       this.partida = partidaSalva;
       navegarParaFase(partidaSalva.getFase());
     } catch (IOException e) {
-      throw new IllegalStateException("N„o foi possÌvel carregar a gravaÁ„o salva.", e);
+      throw new IllegalStateException("N√£o foi poss√≠vel carregar a grava√ß√£o salva.", e);
     }
   }
 
   public void salvarPartida() {
     if (repositorio == null) {
-      throw new IllegalStateException("RepositÛrio de salvamento n„o configurado.");
+      throw new IllegalStateException("Reposit√≥rio de salvamento n√£o configurado.");
     }
     if (partida == null) {
       throw new IllegalStateException("Inicie uma partida antes de salvar.");
@@ -358,7 +358,7 @@ public final class ControladorPartida {
     try {
       repositorio.salvar(partida);
     } catch (IOException e) {
-      throw new IllegalStateException("N„o foi possÌvel salvar a partida.", e);
+      throw new IllegalStateException("N√£o foi poss√≠vel salvar a partida.", e);
     }
   }
 }
