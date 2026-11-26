@@ -21,6 +21,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
@@ -29,6 +30,7 @@ import javax.swing.Timer;
 
 import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.controller.ResultadoGiro;
+import br.com.roletakanto.model.EscolhaEventoRota;
 import br.com.roletakanto.model.Jogador;
 import br.com.roletakanto.model.LiderGinasio;
 import br.com.roletakanto.model.Partida;
@@ -36,6 +38,7 @@ import br.com.roletakanto.model.PilhaItem;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoRoleta;
 import br.com.roletakanto.model.Rota;
+import br.com.roletakanto.model.StatusPokemon;
 
 /** Tela da rota com equipe, roleta, líder, mochila e navegação da campanha. */
 public final class PainelRota extends JPanel {
@@ -62,6 +65,7 @@ public final class PainelRota extends JPanel {
   private final JButton botaoGirar = EstiloJogo.criarBotao("GIRAR", true);
   private final JButton botaoEquipe = EstiloJogo.criarBotao("EQUIPE", false);
   private final JButton botaoMochila = EstiloJogo.criarBotao("MOCHILA", false);
+  private final JButton botaoEvento = EstiloJogo.criarBotao("EVENTO", false);
   private final JButton botaoAvancar = EstiloJogo.criarBotao("AVANÇAR", false);
 
   private ControladorPartida controlador;
@@ -137,6 +141,7 @@ public final class PainelRota extends JPanel {
     botaoGirar.setEnabled(false);
     botaoEquipe.setEnabled(false);
     botaoMochila.setEnabled(false);
+    botaoEvento.setEnabled(false);
     botaoAvancar.setEnabled(false);
     destaqueResultado.setText("A RODA MÁGICA ESTÁ GIRANDO...");
     destaqueResultado.setIcon(null);
@@ -299,9 +304,10 @@ public final class PainelRota extends JPanel {
     rodape.add(mensagens, BorderLayout.CENTER);
 
     JPanel navegacao = painelTransparente();
-    navegacao.setLayout(new GridLayout(1, 3, 8, 0));
+    navegacao.setLayout(new GridLayout(1, 4, 8, 0));
     navegacao.add(botaoEquipe);
     navegacao.add(botaoMochila);
+    navegacao.add(botaoEvento);
     navegacao.add(botaoAvancar);
     rodape.add(navegacao, BorderLayout.EAST);
     return rodape;
@@ -319,7 +325,34 @@ public final class PainelRota extends JPanel {
       mostrarMensagem("O resumo atualizado da mochila está à direita.", false);
       aoAbrirMochila.run();
     });
+    botaoEvento.addActionListener(evento -> visitarEventoOpcional());
     botaoAvancar.addActionListener(evento -> avancarCampanha());
+  }
+
+  private void visitarEventoOpcional() {
+    if (controlador == null || rota == null || !rota.eventoOpcionalDisponivel()) {
+      mostrarMensagem("O evento opcional desta rota não está disponível.", true);
+      return;
+    }
+
+    Object[] opcoes = {"Descansar", "Pegar Super Poção", "Cancelar"};
+    int escolha = JOptionPane.showOptionDialog(
+        this,
+        "Escolha uma recompensa para esta rota.",
+        "Evento opcional",
+        JOptionPane.DEFAULT_OPTION,
+        JOptionPane.QUESTION_MESSAGE,
+        null,
+        opcoes,
+        opcoes[0]);
+    if (escolha == 0) {
+      mostrarMensagem(controlador.usarEventoOpcional(EscolhaEventoRota.DESCANSO), false);
+    } else if (escolha == 1) {
+      mostrarMensagem(controlador.usarEventoOpcional(EscolhaEventoRota.SUPRIMENTOS), false);
+    } else {
+      return;
+    }
+    apresentar(controlador.getPartida());
   }
 
   private void executarGiro() {
@@ -420,6 +453,11 @@ public final class PainelRota extends JPanel {
     hp.setAlignmentX(Component.LEFT_ALIGNMENT);
     dados.add(nome);
     dados.add(tipo);
+    if (pokemon.getStatus() != StatusPokemon.NENHUM) {
+      JLabel status = criarTexto(pokemon.getStatus().getDescricao().toUpperCase(), 8, EstiloJogo.MAGENTA);
+      status.setAlignmentX(Component.LEFT_ALIGNMENT);
+      dados.add(status);
+    }
     dados.add(Box.createVerticalStrut(4));
     dados.add(hp);
     cartao.add(dados, BorderLayout.CENTER);
@@ -497,6 +535,11 @@ public final class PainelRota extends JPanel {
     boolean podeGirar = controlador != null && possuiPartida && rota.temGiroDisponivel()
         && (partida == null || partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA);
     botaoGirar.setEnabled(podeGirar);
+    botaoEvento.setEnabled(controlador != null
+        && possuiPartida
+        && partida != null
+        && partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA
+        && rota.eventoOpcionalDisponivel());
     botaoAvancar.setEnabled(possuiPartida && !rota.temGiroDisponivel()
         && partida != null
         && partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA);
@@ -525,6 +568,7 @@ public final class PainelRota extends JPanel {
       case "super_pocao" -> "SUPER POÇÃO";
       case "reviver" -> "REVIVER";
       case "pokebola_dourada" -> "POKÉBOLA DOURADA";
+      case "cura_status" -> "CURA DE STATUS";
       case "evento" -> "EVENTO DA ROTA";
       default -> resultado.idConteudo().replace('_', ' ').toUpperCase();
     };

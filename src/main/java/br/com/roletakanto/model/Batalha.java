@@ -6,16 +6,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.SeletorAcaoIA;
 
 public final class Batalha implements Serializable {
+  private static final int USOS_MAXIMOS_GOLPE_JOGADOR = 10;
+  // Keep type advantages meaningful without allowing leaders to routinely one-shot the team.
+  private static final double MULTIPLICADOR_DANO_LIDER = 0.65;
+
   private final Partida partida;
   private final Jogador jogador;
   private final LiderGinasio lider;
   private final CalculadoraDano calculadora;
   private final SeletorAcaoIA ia;
+  private final Random random;
   private final List<Pokemon> equipeLider;
   private final Map<String, Integer> usosRestantesGolpes = new HashMap<>();
   private Pokemon ativoJogador;
@@ -23,7 +29,7 @@ public final class Batalha implements Serializable {
   private boolean desistiu;
 
   public Batalha(Jogador jogador, LiderGinasio lider, CalculadoraDano calculadora, SeletorAcaoIA ia) {
-    this(null, jogador, lider, calculadora, ia);
+    this(null, jogador, lider, calculadora, ia, new Random());
   }
 
   public Batalha(
@@ -32,12 +38,23 @@ public final class Batalha implements Serializable {
       LiderGinasio lider,
       CalculadoraDano calculadora,
       SeletorAcaoIA ia) {
+    this(partida, jogador, lider, calculadora, ia, new Random());
+  }
+
+  public Batalha(
+      Partida partida,
+      Jogador jogador,
+      LiderGinasio lider,
+      CalculadoraDano calculadora,
+      SeletorAcaoIA ia,
+      Random random) {
     this.partida = partida;
     this.jogador = Objects.requireNonNull(jogador, "O jogador da batalha é obrigatório.");
     this.lider = Objects.requireNonNull(lider, "O líder de ginásio é obrigatório.");
     this.calculadora =
         Objects.requireNonNull(calculadora, "A calculadora de dano é obrigatória.");
     this.ia = Objects.requireNonNull(ia, "O seletor de ação da IA é obrigatório.");
+    this.random = Objects.requireNonNull(random, "O gerador aleatório é obrigatório.");
 
     this.equipeLider = List.copyOf(lider.criarEquipeDeBatalha());
     this.ativoJogador = encontrarProximoApto(jogador.getEquipe().listar());
@@ -56,8 +73,30 @@ public final class Batalha implements Serializable {
       return true;
     }
     String chave = chaveGolpe(pokemon, golpe);
-    int restantes = usosRestantesGolpes.computeIfAbsent(chave, k -> golpe.getUsosMaximos());
+    int restantes =
+        usosRestantesGolpes.computeIfAbsent(chave, k -> getUsosMaximos(pokemon, golpe));
     return restantes > 0;
+  }
+
+  public int getUsosMaximos(Pokemon pokemon, Golpe golpe) {
+    if (pokemon == null || golpe == null || golpe.ehIlimitado()) {
+      return 0;
+    }
+    return pertenceAoJogador(pokemon)
+        ? USOS_MAXIMOS_GOLPE_JOGADOR
+        : golpe.getUsosMaximos();
+  }
+
+  private boolean pertenceAoJogador(Pokemon pokemon) {
+    return jogador.getEquipe().listar().contains(pokemon);
+  }
+
+  public int getUsosRestantes(Pokemon pokemon, Golpe golpe) {
+    if (pokemon == null || golpe == null || golpe.ehIlimitado()) {
+      return 0;
+    }
+    String chave = chaveGolpe(pokemon, golpe);
+    return usosRestantesGolpes.computeIfAbsent(chave, k -> getUsosMaximos(pokemon, golpe));
   }
 
   private void consumirUsoGolpe(Pokemon pokemon, Golpe golpe) {
@@ -65,7 +104,8 @@ public final class Batalha implements Serializable {
       return;
     }
     String chave = chaveGolpe(pokemon, golpe);
-    int restantes = usosRestantesGolpes.computeIfAbsent(chave, k -> golpe.getUsosMaximos());
+    int restantes =
+        usosRestantesGolpes.computeIfAbsent(chave, k -> getUsosMaximos(pokemon, golpe));
     usosRestantesGolpes.put(chave, Math.max(0, restantes - 1));
   }
 
@@ -123,6 +163,8 @@ public final class Batalha implements Serializable {
 
     if (uso.sucesso()) {
       executarTurnoIA(mensagens);
+    } else {
+      return new ResultadoTurno(mensagens, verificarResultado(), getIdAtivoJogador());
     }
 
     return finalizarTurno(mensagens);
@@ -242,8 +284,16 @@ private void aplicarGolpe(
     }
 
     consumirUsoGolpe(atacante, golpe);
+    if (atacante.getStatus() == StatusPokemon.PARALISADO && random.nextInt(100) < 25) {
+      mensagens.add(atacante.getEspecie().getNome() + " está paralisado e não conseguiu agir!");
+      return;
+    }
 
-    int dano = calculadora.calcular(atacante, defensor, golpe);
+    int danoBase = calculadora.calcular(atacante, defensor, golpe);
+    int dano =
+        pertenceAoJogador(atacante)
+            ? danoBase
+            : Math.max(1, (int) Math.round(danoBase * MULTIPLICADOR_DANO_LIDER));
     defensor.receberDano(dano);
 
     mensagens.add(
@@ -255,6 +305,18 @@ private void aplicarGolpe(
             defensor.getEspecie().getNome()));
 
     adicionarMensagemEfetividade(golpe, defensor, mensagens);
+    if (defensor.estaApto()
+        && golpe.getChanceStatus() > 0
+        && golpe.getStatusInfligido() != StatusPokemon.NENHUM
+        && defensor.getStatus() == StatusPokemon.NENHUM
+        && random.nextInt(100) < golpe.getChanceStatus()
+        && defensor.aplicarStatus(golpe.getStatusInfligido())) {
+      mensagens.add(
+          defensor.getEspecie().getNome()
+              + " ficou "
+              + defensor.getStatus().getDescricao()
+              + "!");
+    }
 
     if (!defensor.estaApto()) {
       mensagens.add(defensor.getEspecie().getNome() + " desmaiou!");
@@ -274,6 +336,8 @@ private void aplicarGolpe(
   // --- Finalização e Gerenciamento de Turno ---
 
   private ResultadoTurno finalizarTurno(List<String> mensagens) {
+    aplicarDanoDeStatus(ativoJogador, mensagens);
+    aplicarDanoDeStatus(ativoLider, mensagens);
     substituirPokemonDesmaiado(ativoLider, equipeLider, lider.getNome(), true, mensagens);
     substituirPokemonDesmaiado(
         ativoJogador, jogador.getEquipe().listar(), jogador.getNome(), false, mensagens);
@@ -287,6 +351,18 @@ private void aplicarGolpe(
     }
 
     return new ResultadoTurno(mensagens, resultado, getIdAtivoJogador());
+  }
+
+  private void aplicarDanoDeStatus(Pokemon pokemon, List<String> mensagens) {
+    if (pokemon == null || !pokemon.estaApto() || pokemon.getStatus() != StatusPokemon.ENVENENADO) {
+      return;
+    }
+    int dano = Math.max(1, pokemon.getHpMaximo() / 20);
+    pokemon.receberDano(dano);
+    mensagens.add(pokemon.getEspecie().getNome() + " sofreu " + dano + " de dano por envenenamento.");
+    if (!pokemon.estaApto()) {
+      mensagens.add(pokemon.getEspecie().getNome() + " desmaiou!");
+    }
   }
 
   private void substituirPokemonDesmaiado(

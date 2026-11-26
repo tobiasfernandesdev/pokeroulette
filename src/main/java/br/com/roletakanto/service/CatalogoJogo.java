@@ -8,6 +8,7 @@ import java.util.Random;
 
 import br.com.roletakanto.model.EspeciePokemon;
 import br.com.roletakanto.model.Golpe;
+import br.com.roletakanto.model.StatusPokemon;
 import br.com.roletakanto.model.Insignia;
 import br.com.roletakanto.model.Item;
 import br.com.roletakanto.model.LiderGinasio;
@@ -16,6 +17,7 @@ import br.com.roletakanto.model.Rota;
 import br.com.roletakanto.model.SegmentoRoleta;
 import br.com.roletakanto.model.TipoPokemon;
 import br.com.roletakanto.model.TipoResultadoRoleta;
+import br.com.roletakanto.model.item.CuraStatus;
 import br.com.roletakanto.model.item.Pocao;
 import br.com.roletakanto.model.item.PokebolaDourada;
 import br.com.roletakanto.model.item.Reviver;
@@ -26,13 +28,15 @@ public final class CatalogoJogo {
   public static final String ID_SUPER_POCAO = "super_pocao";
   public static final String ID_REVIVER = "reviver";
   public static final String ID_POKEBOLA_DOURADA = "pokebola_dourada";
+  public static final String ID_CURA_STATUS = "cura_status";
 
   private static final int PESO_ESPECIE = 15;
   private static final int PESO_POCAO = 15;
   private static final int PESO_SUPER_POCAO = 5;
   private static final int PESO_REVIVER = 5;
   private static final int PESO_POKEBOLA_DOURADA = 10;
-  private static final int PESO_EVENTO = 20;
+  private static final int PESO_EVENTO = 15;
+  private static final int PESO_CURA_STATUS = 5;
 
   /** Retorna as 15 espécies capturáveis e as 8 exclusivas dos líderes[cite: 15, 69]. */
   public Map<String, EspeciePokemon> carregarEspecies() {
@@ -74,7 +78,7 @@ public final class CatalogoJogo {
 
     List<Rota> rotas =
         List.of(
-            rota("rota_1", "Rota 1", "brock", random, "pidgey", "rattata", "pikachu"),
+            rota("rota_1", "Rota 1", "brock", random, "pidgey", "oddish", "pikachu"),
             rota("caverna", "Caverna", "misty", random, "zubat", "geodude", "sandshrew"),
             rota("rota_2", "Rota 2", "lt_surge", random, "oddish", "abra", "meowth"),
             rota("torre_pokemon", "Torre Pokémon", "erika", random, "gastly", "cubone", "vulpix"));
@@ -113,7 +117,8 @@ public final class CatalogoJogo {
         new Pocao(ID_POCAO, "Poção"),
         new SuperPocao(ID_SUPER_POCAO, "Super Poção"),
         new Reviver(ID_REVIVER, "Reviver"),
-        new PokebolaDourada(ID_POKEBOLA_DOURADA, "Pokébola Dourada"));
+        new PokebolaDourada(ID_POKEBOLA_DOURADA, "Pokébola Dourada"),
+        new CuraStatus(ID_CURA_STATUS, "Cura de Status"));
   }
 
   /** Confere quantidades, IDs e pesos definidos pelo manual. */
@@ -121,7 +126,7 @@ public final class CatalogoJogo {
     if (carregarEspecies().size() != 23) {
       throw new IllegalStateException("O catálogo deve conter 23 espécies.");
     }
-    if (criarItens().stream().map(Item::getId).distinct().count() != 4) {
+    if (criarItens().stream().map(Item::getId).distinct().count() != 5) {
       throw new IllegalStateException("Os itens devem possuir IDs únicos.");
     }
     List<Rota> rotas = criarRotas(new Random(0));
@@ -149,8 +154,12 @@ public final class CatalogoJogo {
     return switch (tipo) {
       case FOGO -> new Golpe("ataque_fogo", "Ataque de Fogo", tipo, 20, 3);
       case AGUA -> new Golpe("ataque_agua", "Ataque de Água", tipo, 20, 3);
-      case PLANTA -> new Golpe("ataque_planta", "Ataque de Planta", tipo, 20, 3);
-      case ELETRICO -> new Golpe("ataque_eletrico", "Ataque Elétrico", tipo, 20, 3);
+      case PLANTA ->
+          new Golpe(
+              "ataque_planta", "Ataque de Planta", tipo, 20, 3, StatusPokemon.ENVENENADO, 25);
+      case ELETRICO ->
+          new Golpe(
+              "ataque_eletrico", "Ataque Elétrico", tipo, 20, 3, StatusPokemon.PARALISADO, 25);
       case ROCHA -> new Golpe("ataque_rocha", "Ataque de Rocha", tipo, 20, 3);
       case NORMAL -> new Golpe("ataque_normal", "Ataque Normal", tipo, 20, 3);
       case VOADOR -> new Golpe("ataque_voador", "Ataque Voador", tipo, 20, 3);
@@ -174,6 +183,8 @@ public final class CatalogoJogo {
     segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_REVIVER, PESO_REVIVER));
     segmentos.add(
         new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_POKEBOLA_DOURADA, PESO_POKEBOLA_DOURADA));
+    segmentos.add(
+        new SegmentoRoleta(TipoResultadoRoleta.ITEM, ID_CURA_STATUS, PESO_CURA_STATUS));
     // O serviço que aplicar o resultado escolherá CENTRO, RECOMPENSA ou CAMINHO_VAZIO em partes iguais[cite: 15, 69].
     segmentos.add(new SegmentoRoleta(TipoResultadoRoleta.EVENTO, "evento", PESO_EVENTO));
     return new Rota(id, nome, new Roleta(segmentos, random), idLider);
