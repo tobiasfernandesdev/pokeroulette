@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /** Área de roleta associada ao próximo líder[cite: 25, 60]. */
 public final class Rota implements Serializable {
-  private static final int GIROS_INICIAIS = 3;
+  private static final int GIROS_INICIAIS = 2;
   private static final int MAXIMO_BONUS_POR_ROTA = 1;
 
   private final String id;

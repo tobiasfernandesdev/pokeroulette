@@ -34,8 +34,8 @@ public final class TesteRoletaTela {
 
     assertTrue(giro.sucesso());
     assertNotNull(giro.resultado());
-    assertEquals(2, controlador.getPartida().getRotaAtual().getGirosRestantes());
-    assertTrue(giro.mensagem().contains("Giros restantes: 2"));
+    assertEquals(1, controlador.getPartida().getRotaAtual().getGirosRestantes());
+    assertTrue(giro.mensagem().contains("Giros restantes: 1"));
   }
 
   @Test
