@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -15,12 +16,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import br.com.roletakanto.model.AcaoBatalha;
 import br.com.roletakanto.model.Batalha;
+import br.com.roletakanto.model.EspeciePokemon;
 import br.com.roletakanto.model.FasePartida;
 import br.com.roletakanto.model.Golpe;
 import br.com.roletakanto.model.LiderGinasio;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoBatalha;
 import br.com.roletakanto.model.ResultadoTurno;
+import br.com.roletakanto.model.TipoPokemon;
 import br.com.roletakanto.persistence.RepositorioPartidaArquivo;
 import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.CatalogoJogo;
@@ -46,11 +49,21 @@ class TesteCampanhaERegrasBatalha {
   }
 
   @Test
-  void deveBloquearGolpeEspecialQuandoUsosEsgotarem() {
+  void devePermitirDezUsosDeGolpeEspecialAoJogador() {
     controladorPartida.novaPartida("bulbasaur");
     var jogador = controladorPartida.getPartida().getJogador();
-    var onix = catalogo.carregarEspecies().get("onix");
-    var lider = new LiderGinasio("treino", "Treino", List.of(onix), null);
+    var alvo =
+        new EspeciePokemon(
+            "alvo",
+            "Alvo",
+            TipoPokemon.NORMAL,
+            10_000,
+            0,
+            10_000,
+            1,
+            List.of())
+            .criarInstancia();
+    var lider = new LiderGinasio("treino", "Treino", List.of(alvo.getEspecie()), null);
     Batalha batalha = new Batalha(jogador, lider, new CalculadoraDano(), new SeletorAcaoIA());
     Pokemon ativo = batalha.obterAtivoJogador();
     Golpe especial =
@@ -59,7 +72,8 @@ class TesteCampanhaERegrasBatalha {
             .findFirst()
             .orElseThrow();
 
-    for (int i = 0; i < especial.getUsosMaximos(); i++) {
+    assertEquals(10, batalha.getUsosMaximos(ativo, especial));
+    for (int i = 0; i < batalha.getUsosMaximos(ativo, especial); i++) {
       assertTrue(batalha.possuiUsoDisponivel(ativo, especial));
       var turno = batalha.executarAcao(AcaoBatalha.golpe(especial.getId()));
       assertEquals(ResultadoBatalha.EM_ANDAMENTO, turno.resultado());
@@ -71,6 +85,90 @@ class TesteCampanhaERegrasBatalha {
     ResultadoTurno tentativaExtra = batalha.executarAcao(AcaoBatalha.golpe(especial.getId()));
     assertEquals(hpAdversario, batalha.getAtivoLider().getHpAtual());
     assertTrue(tentativaExtra.mensagens().stream().anyMatch(m -> m.contains("não tem mais usos")));
+  }
+
+  @Test
+  void deveManterTresUsosDeGolpeEspecialParaLideres() {
+    controladorPartida.novaPartida("bulbasaur");
+    var jogador = controladorPartida.getPartida().getJogador();
+    var lider = catalogo.criarLideres().get(0);
+    Batalha batalha = new Batalha(jogador, lider, new CalculadoraDano(), new SeletorAcaoIA());
+    Pokemon adversario = batalha.getAtivoLider();
+    Golpe especial =
+        adversario.getEspecie().getGolpes().stream()
+            .filter(g -> !g.ehIlimitado())
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(3, batalha.getUsosMaximos(adversario, especial));
+    for (int i = 0; i < 3; i++) {
+      batalha.executarAcao(AcaoBatalha.golpe("investida"));
+    }
+
+    assertEquals(0, batalha.getUsosRestantes(adversario, especial));
+    assertFalse(batalha.possuiUsoDisponivel(adversario, especial));
+  }
+
+  @Test
+  void deveVencerPrimeiroGinasioComCharmanderEAjudaDaRota() {
+    ControladorPartida campanha =
+        new ControladorPartida(
+            catalogo,
+            new RepositorioPartidaArquivo(pastaTemp.resolve("primeiro-ginasio.dat")),
+            new Random(0L));
+    campanha.novaPartida("charmander");
+
+    campanha.girarRoleta();
+    campanha.girarRoleta();
+    campanha.girarRoleta();
+
+    var equipe = campanha.getPartida().getJogador().getEquipe();
+    Pokemon oddish =
+        equipe.listar().stream()
+            .filter(pokemon -> pokemon.getEspecie().getId().equals("oddish"))
+            .findFirst()
+            .orElseThrow();
+    equipe.trocarPosicao(0, equipe.listar().indexOf(oddish));
+    campanha.confirmarBatalha();
+    ControladorBatalha combate = new ControladorBatalha(campanha.getPartida());
+    CalculadoraDano calculadora = new CalculadoraDano();
+
+    for (int turno = 0;
+        campanha.getPartida().getFase() == FasePartida.BATALHA && turno < 100;
+        turno++) {
+      Batalha batalha = campanha.getPartida().getBatalhaAtual();
+      Pokemon ativo = batalha.obterAtivoJogador();
+      var mochila = campanha.getPartida().getJogador().getMochila();
+      int faltando = ativo.getHpMaximo() - ativo.getHpAtual();
+      var superPocao = mochila.obterPilhaPorId(CatalogoJogo.ID_SUPER_POCAO);
+      var pocao = mochila.obterPilhaPorId(CatalogoJogo.ID_POCAO);
+
+      if (superPocao != null
+          && superPocao.getQuantidade() > 0
+          && ativo.getHpAtual() <= ativo.getHpMaximo() * 0.45
+          && faltando >= 35) {
+        combate.usarItem(CatalogoJogo.ID_SUPER_POCAO);
+        continue;
+      }
+      if (pocao != null
+          && pocao.getQuantidade() > 0
+          && ativo.getHpAtual() <= ativo.getHpMaximo() * 0.30
+          && faltando >= 15) {
+        combate.usarItem(CatalogoJogo.ID_POCAO);
+        continue;
+      }
+
+      Golpe golpe =
+          ativo.getEspecie().getGolpes().stream()
+              .filter(g -> batalha.possuiUsoDisponivel(ativo, g))
+              .max(
+                  Comparator.comparingInt(
+                      g -> calculadora.calcular(ativo, batalha.getAtivoLider(), g)))
+              .orElseThrow();
+      combate.executarGolpe(golpe.getId());
+    }
+
+    assertEquals(FasePartida.ROTA, campanha.getPartida().getFase());
   }
 
   @Test

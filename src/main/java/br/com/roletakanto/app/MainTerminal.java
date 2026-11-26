@@ -12,6 +12,7 @@ import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.model.Batalha;
 import br.com.roletakanto.model.ContextoUsoItem;
 import br.com.roletakanto.model.Equipe;
+import br.com.roletakanto.model.EscolhaEventoRota;
 import br.com.roletakanto.model.EspeciePokemon;
 import br.com.roletakanto.model.FasePartida;
 import br.com.roletakanto.model.Golpe;
@@ -23,6 +24,7 @@ import br.com.roletakanto.model.PilhaItem;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoBatalha;
 import br.com.roletakanto.model.ResultadoTurno;
+import br.com.roletakanto.model.StatusPokemon;
 import br.com.roletakanto.persistence.RepositorioPartidaArquivo;
 import br.com.roletakanto.service.CatalogoJogo;
 import br.com.roletakanto.util.FormatadorTexto;
@@ -118,24 +120,42 @@ public final class MainTerminal {
     System.out.printf("Próximo líder: %s | Giros restantes: %d | Insígnias: %d/%d%n",
         partida.getLiderAtual().getNome(), partida.getRotaAtual().getGirosRestantes(),
         partida.getInsignias().size(), partida.getTotalRotas());
+    System.out.println("Evento opcional: "
+        + (partida.getRotaAtual().eventoOpcionalDisponivel() ? "disponível" : "já utilizado"));
     System.out.print("""
         1. Girar roleta
         2. Abrir mochila
         3. Ver equipe e reserva
         4. Organizar equipe para o ginásio
-        5. Salvar partida
+        5. Evento opcional da rota
+        6. Salvar partida
         0. Voltar ao menu
         """);
 
-    switch (lerOpcao(5)) {
+    switch (lerOpcao(6)) {
       case 0 -> { return false; }
       case 1 -> System.out.println(controlador.girarRoleta());
       case 2 -> usarItemNaRota(partida);
       case 3 -> mostrarEquipeEReserva(partida.getJogador());
       case 4 -> controlador.navegarParaFase(FasePartida.ORGANIZACAO);
-      case 5 -> salvar();
+      case 5 -> usarEventoOpcional();
+      case 6 -> salvar();
     }
     return true;
+  }
+
+  private void usarEventoOpcional() {
+    System.out.println("""
+        Escolha o evento desta rota:
+        1. Descansar: restaurar equipe e reserva
+        2. Suprimentos: receber uma Super Poção
+        0. Voltar
+        """);
+    switch (lerOpcao(2)) {
+      case 1 -> System.out.println(controlador.usarEventoOpcional(EscolhaEventoRota.DESCANSO));
+      case 2 -> System.out.println(controlador.usarEventoOpcional(EscolhaEventoRota.SUPRIMENTOS));
+      default -> { }
+    }
   }
 
   private void usarItemNaRota(Partida partida) {
@@ -312,7 +332,12 @@ public final class MainTerminal {
 
   private static String descreverPokemon(Pokemon pokemon) {
     return "%s | HP %s%s".formatted(descreverEspecie(pokemon.getEspecie()),
-        FormatadorTexto.formatarHp(pokemon), pokemon.estaApto() ? "" : " | desmaiado");
+        FormatadorTexto.formatarHp(pokemon),
+        pokemon.estaApto()
+            ? (pokemon.getStatus() == StatusPokemon.NENHUM
+                ? ""
+                : " | " + pokemon.getStatus().getDescricao())
+            : " | desmaiado");
   }
 
   private static String descreverGolpe(Batalha batalha, Pokemon ativo, Golpe golpe) {
@@ -320,7 +345,11 @@ public final class MainTerminal {
     if (golpe.ehIlimitado()) {
       return descricao + " | ilimitado";
     }
-    return descricao + (batalha.possuiUsoDisponivel(ativo, golpe) ? " | uso limitado" : " | esgotado");
+    return descricao
+        + " | usos "
+        + batalha.getUsosRestantes(ativo, golpe)
+        + "/"
+        + batalha.getUsosMaximos(ativo, golpe);
   }
 
   private <T> T escolher(List<T> opcoes, Function<T, String> descrever) {

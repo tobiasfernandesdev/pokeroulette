@@ -41,6 +41,10 @@ No **Eclipse**, clique com o botão direito no projeto e escolha **Run As > Mave
 
 Os sprites de Pokémon, itens e líderes usados na rota ficam em `src/main/resources/assets` e funcionam sem internet. As fontes, versões e condições de uso estão em [Créditos das imagens](src/main/resources/assets/CREDITOS.md). A arena aparece atrás do próximo líder; a mochila e o resultado do giro exibem ícones dos itens.
 
+Para dar mais espaço à preparação, cada rota oferece três giros. O primeiro caminho inclui Oddish como opção de equipe contra Brock. Em batalha, golpes especiais do jogador têm até 10 usos por Pokémon; os líderes mantêm o limite original, e seus ataques causam 65% do dano calculado.
+
+Golpes de Planta podem envenenar e golpes Elétricos podem paralisar, cada um com 25% de chance. Pokémon envenenados perdem 5% do HP máximo ao fim de cada turno, e os paralisados podem perder a ação. A Cura de Status remove essas condições; os Centros Pokémon também as removem ao restaurar a equipe. Cada rota ainda oferece um evento opcional, usado uma vez: descansar para restaurar equipe e reserva ou receber uma Super Poção.
+
 ### Janela inicial provisória
 
 Na IDE, execute a classe `Main` para abrir a janela inicial simples. A classe `RoletaKantoApp` encaminha para a mesma entrada.

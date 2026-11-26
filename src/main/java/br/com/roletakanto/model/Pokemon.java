@@ -7,6 +7,7 @@ public final class Pokemon implements Serializable {
   private final String id;
   private final EspeciePokemon especie;
   private int hpAtual;
+  private StatusPokemon status = StatusPokemon.NENHUM;
 
   public Pokemon(String id, EspeciePokemon especie) {
     this.id = id;
@@ -39,6 +40,29 @@ public final class Pokemon implements Serializable {
     return estaApto() ? EstadoPokemon.ATIVO : EstadoPokemon.DESMAIADO;
   }
 
+  public StatusPokemon getStatus() {
+    return status == null ? StatusPokemon.NENHUM : status;
+  }
+
+  public boolean aplicarStatus(StatusPokemon novoStatus) {
+    if (!estaApto()
+        || novoStatus == null
+        || novoStatus == StatusPokemon.NENHUM
+        || getStatus() != StatusPokemon.NENHUM) {
+      return false;
+    }
+    status = novoStatus;
+    return true;
+  }
+
+  public boolean curarStatus() {
+    if (getStatus() == StatusPokemon.NENHUM) {
+      return false;
+    }
+    status = StatusPokemon.NENHUM;
+    return true;
+  }
+
   public int getHpAtual() {
     return hpAtual;
   }
@@ -57,5 +81,6 @@ public final class Pokemon implements Serializable {
 
   public void restaurarParaCentro() {
     hpAtual = getHpMaximo();
+    status = StatusPokemon.NENHUM;
   }
 }

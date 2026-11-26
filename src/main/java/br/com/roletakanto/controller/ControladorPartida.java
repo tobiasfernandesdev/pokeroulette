@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import br.com.roletakanto.model.Batalha;
 import br.com.roletakanto.model.ContextoUsoItem;
 import br.com.roletakanto.model.Equipe;
+import br.com.roletakanto.model.EscolhaEventoRota;
 import br.com.roletakanto.model.EspeciePokemon;
 import br.com.roletakanto.model.FasePartida;
 import br.com.roletakanto.model.Item;
@@ -183,6 +184,44 @@ public final class ControladorPartida {
             .replace(" foi adicionado a mochila.", " (recompensa da rota).");
       }
       case CAMINHO_VAZIO -> "Evento Caminho Vazio: nada aconteceu.";
+    };
+  }
+
+  public String usarEventoOpcional(EscolhaEventoRota escolha) {
+    if (partida == null) {
+      return "Inicie uma partida antes de visitar o evento da rota.";
+    }
+    if (!partida.podeContinuar() || partida.getFase() != FasePartida.ROTA) {
+      return "O evento opcional so pode ser visitado durante uma rota.";
+    }
+    if (escolha == null) {
+      return "Escolha uma opcao para o evento da rota.";
+    }
+
+    Rota rota = partida.getRotaAtual();
+    if (!rota.eventoOpcionalDisponivel()) {
+      return "O evento opcional desta rota ja foi utilizado.";
+    }
+
+    Jogador jogador = partida.getJogador();
+    return switch (escolha) {
+      case DESCANSO -> {
+        jogador.restaurarEquipeNoCentro();
+        jogador.getReserva().listar().forEach(Pokemon::restaurarParaCentro);
+        rota.registrarEventoOpcional();
+        yield "Descanso: equipe e reserva foram restauradas.";
+      }
+      case SUPRIMENTOS -> {
+        Item superPocao = itens.get(CatalogoJogo.ID_SUPER_POCAO);
+        if (superPocao == null) {
+          throw new IllegalStateException("Item de Super Pocao nao encontrado no catalogo.");
+        }
+        if (!jogador.getMochila().adicionar(superPocao, 1)) {
+          yield "A mochila esta cheia; o evento nao foi consumido.";
+        }
+        rota.registrarEventoOpcional();
+        yield "Suprimentos: uma Super Pocao foi adicionada a mochila.";
+      }
     };
   }
 

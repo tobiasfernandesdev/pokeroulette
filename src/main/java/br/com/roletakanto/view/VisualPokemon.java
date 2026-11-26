@@ -31,7 +31,8 @@ public final class VisualPokemon {
 
   /** O ID do item é o mesmo usado pela mochila: por exemplo, "super_pocao". */
   public ImageIcon carregarItem(String idItem, int largura, int altura) {
-    return carregarRecurso("/assets/items/" + idItem + ".png", largura, altura);
+    String arquivo = "cura_status".equals(idItem) ? "pocao" : idItem;
+    return carregarRecurso("/assets/items/" + arquivo + ".png", largura, altura);
   }
 
   public ImageIcon carregarCenario(String idCenario, int largura, int altura) {

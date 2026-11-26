@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /** Área de roleta associada ao próximo líder[cite: 25, 60]. */
 public final class Rota implements Serializable {
-  private static final int GIROS_INICIAIS = 2;
+  private static final int GIROS_INICIAIS = 3;
   private static final int MAXIMO_BONUS_POR_ROTA = 1;
 
   private final String id;
@@ -15,6 +15,7 @@ public final class Rota implements Serializable {
 
   private int girosRestantes = GIROS_INICIAIS;
   private int bonusConcedidos = 0;
+  private boolean eventoOpcionalUsado;
 
   public Rota(String id, String nome, Roleta roleta, String idLider) {
     if (id == null || id.isBlank()) {
@@ -70,5 +71,17 @@ public final class Rota implements Serializable {
 
   public int getGirosRestantes() {
     return girosRestantes;
+  }
+
+  public boolean eventoOpcionalDisponivel() {
+    return !eventoOpcionalUsado;
+  }
+
+  public boolean registrarEventoOpcional() {
+    if (!eventoOpcionalDisponivel()) {
+      return false;
+    }
+    eventoOpcionalUsado = true;
+    return true;
   }
 }
