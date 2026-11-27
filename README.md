@@ -39,6 +39,18 @@ mvn -Pprevia-menu javafx:run
 
 No **Eclipse**, clique com o botão direito no projeto e escolha **Run As > Maven build...**. Preencha **Goals** com `javafx:run`, **Profiles** com `previa-menu` e selecione na aba **JRE** o JDK do projeto. O perfil se aplica a essa execução da prévia. No **VS Code**, use o mesmo comando no terminal da pasta do projeto se o Maven estiver disponível no PATH.
 
+No menu, **Continuar** abre o progresso correspondente ao nome informado. A campanha
+salva automaticamente após as ações principais. Pressione **Esc** para sair de um
+painel interno ou voltar ao menu durante a partida. Depois disso, **Trocar nome**
+permite abrir outro perfil. Os arquivos da campanha ficam em `saves/jogadores/`
+e o slot Swing antigo, `saves/partida.dat`, pode ser lido pelo dono indicado no
+arquivo. Ao confirmar uma nova jornada, a cópia do slot anterior vai para
+`saves/jogadores/historico/`. O salvamento do terminal continua separado.
+
+Em **Áudio**, ajuste ou desligue música e efeitos separadamente. O jogo carrega os
+WAVs pelo classpath, mesmo sem internet. Consulte as trilhas, efeitos e licenças
+nos [créditos de áudio](CREDITOS_AUDIO.md).
+
 Os sprites de Pokémon, itens e líderes usados na rota ficam em `src/main/resources/assets` e funcionam sem internet. As fontes, versões e condições de uso estão em [Créditos das imagens](src/main/resources/assets/CREDITOS.md). A arena aparece atrás do próximo líder; a mochila e o resultado do giro exibem ícones dos itens.
 
 Para dar mais espaço à preparação, cada rota oferece dois giros. O primeiro caminho inclui Oddish como opção de equipe contra Brock. Em batalha, golpes especiais do jogador têm até 10 usos por Pokémon; os líderes mantêm o limite original, e seus ataques causam 65% do dano calculado.

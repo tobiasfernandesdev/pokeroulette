@@ -1,9 +1,7 @@
 package br.com.roletakanto.view;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
 import java.util.function.Consumer;
@@ -22,9 +20,13 @@ public final class PainelInicial extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private final JPanel botoesIniciais = new JPanel(new GridLayout(1, 0, 16, 0));
-    private final JLabel detalhe = new JLabel(" ", SwingConstants.CENTER);
-    private final JLabel candidato = new JLabel(" ", SwingConstants.CENTER);
-    private final JButton confirmar = EstiloJogo.criarBotao("ESCOLHER", true);
+    private final JLabel detalhe = EstiloJogo.faixa("Selecione seu inicial.", 12);
+    private final JLabel candidato = EstiloJogo.faixa("ESCOLHA SEU INICIAL", 15);
+    private final JButton confirmar = new JButton("ESCOLHER");
+    private final JButton voltar = new JButton("VOLTAR");
+    private final VisualPokemon visuais = new VisualPokemon();
+    private AudioJogo audio = AudioJogo.SILENCIO;
+    private Runnable aoVoltar = () -> {};
     private ButtonGroup selecao = new ButtonGroup();
     private transient Consumer<String> aoConfirmar = id -> {};
 
@@ -39,19 +41,23 @@ public final class PainelInicial extends JPanel {
         JPanel controles = new JPanel(new BorderLayout(0, 16));
         controles.setOpaque(false);
         botoesIniciais.setOpaque(false);
-        candidato.setForeground(new Color(49, 23, 76));
-        candidato.setFont(EstiloJogo.fonte(Font.BOLD, 14));
         controles.add(candidato, BorderLayout.NORTH);
-        detalhe.setForeground(new Color(49, 23, 76));
-        detalhe.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         controles.add(botoesIniciais, BorderLayout.CENTER);
         JPanel rodape = new JPanel(new BorderLayout(12, 0));
         rodape.setOpaque(false);
         rodape.add(detalhe, BorderLayout.CENTER);
+        EstiloJogo.personalizarEntrada(confirmar, true, 150, 48);
+        EstiloJogo.personalizarEntrada(voltar, false, 120, 48);
+        voltar.addActionListener(evento -> {
+            audio.efeito(AudioJogo.Efeito.VOLTAR);
+            aoVoltar.run();
+        });
+        rodape.add(voltar, BorderLayout.WEST);
         confirmar.setEnabled(false);
         confirmar.addActionListener(evento -> {
             String selecionado = obterIdSelecionado();
             if (selecionado != null) {
+                audio.efeito(AudioJogo.Efeito.CONFIRMA);
                 aoConfirmar.accept(selecionado);
             }
         });
@@ -59,21 +65,27 @@ public final class PainelInicial extends JPanel {
         controles.add(rodape, BorderLayout.SOUTH);
 
         // O título faz parte do MP4. As escolhas ficam no espaço livre abaixo dele.
-        fundo.posicionarControles(controles, 0.55);
+        fundo.posicionarControles(controles, 0.69);
     }
 
     public void exibirOpcoes(List<EspeciePokemon> opcoes) {
         botoesIniciais.removeAll();
         selecao = new ButtonGroup();
-        detalhe.setText(" ");
+        detalhe.setText("Selecione seu inicial.");
         confirmar.setEnabled(false);
 
         for (EspeciePokemon especie : opcoes) {
-            JToggleButton botao = new JToggleButton(especie.getNome());
-            botao.setPreferredSize(new Dimension(164, 64));
-            botao.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+            String tipo = especie.getTipo().name().equals("AGUA") ? "ÁGUA" : especie.getTipo().name();
+            JToggleButton botao = new JToggleButton("<html><center>" + especie.getNome()
+                + "<br><small>" + tipo + "</small></center></html>");
+            EstiloJogo.personalizarEntrada(botao, false, 210, 154);
+            botao.setIcon(visuais.carregarIcone(especie.getId(), 76, 76));
+            botao.setHorizontalTextPosition(SwingConstants.CENTER);
+            botao.setVerticalTextPosition(SwingConstants.BOTTOM);
+            botao.getAccessibleContext().setAccessibleName(especie.getNome() + " · " + tipo);
             botao.setActionCommand(especie.getId());
             botao.addActionListener(evento -> {
+                audio.efeito(AudioJogo.Efeito.SELECAO);
                 mostrarDetalhe(especie);
                 confirmar.setEnabled(true);
             });
@@ -93,6 +105,11 @@ public final class PainelInicial extends JPanel {
 
     public void definirAcaoConfirmar(Consumer<String> acao) {
         aoConfirmar = acao == null ? id -> {} : acao;
+    }
+
+    void configurarNavegacao(AudioJogo audio, Runnable voltar) {
+        this.audio = audio;
+        this.aoVoltar = voltar;
     }
 
     public void apresentarCandidato(String nome) {

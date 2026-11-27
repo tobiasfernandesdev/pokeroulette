@@ -267,6 +267,18 @@ public final class ControladorPartida {
     return resultado.mensagem() + " Giros restantes: " + partida.getRotaAtual().getGirosRestantes();
   }
 
+  /** Usa um item na rota com o alvo escolhido na equipe, ou a rota para o giro bônus. */
+  public ResultadoUsoItem usarItemNaRota(String idItem, Pokemon alvo) {
+    if (partida == null || partida.getFase() != FasePartida.ROTA) {
+      return new ResultadoUsoItem(false, "Abra a mochila dentro de uma rota.");
+    }
+    var jogador = partida.getJogador();
+    if (alvo != null && !jogador.getEquipe().listar().contains(alvo)) {
+      return new ResultadoUsoItem(false, "Selecione um Pokémon da equipe.");
+    }
+    return jogador.getMochila().usar(idItem, new ContextoUsoItem(partida, null, alvo));
+  }
+
   public void moverParaEquipe(String idPokemon) {
     validarReorganizacaoEquipe("mover um Pokemon para a equipe");
     if (partida
@@ -373,29 +385,36 @@ public final class ControladorPartida {
   }
 
   public void continuarPartida() {
-    if (repositorio == null) {
-      throw new IllegalStateException("Repositório de salvamento não configurado.");
-    }
+    continuarPartida(repositorio);
+  }
 
+  public void continuarPartida(RepositorioPartida origem) {
     try {
       Partida partidaSalva =
-          repositorio
+          origem
               .carregar()
               .orElseThrow(
                   () -> new IllegalStateException("Nenhuma gravação encontrada para continuar."));
 
       partidaSalva.validarEstado();
-      this.partida = partidaSalva;
-      navegarParaFase(partidaSalva.getFase());
+      Partida anterior = this.partida;
+      try {
+        this.partida = partidaSalva;
+        navegarParaFase(partidaSalva.getFase());
+      } catch (RuntimeException erro) {
+        this.partida = anterior;
+        throw erro;
+      }
     } catch (IOException e) {
       throw new IllegalStateException("Não foi possível carregar a gravação salva.", e);
     }
   }
 
   public void salvarPartida() {
-    if (repositorio == null) {
-      throw new IllegalStateException("Repositório de salvamento não configurado.");
-    }
+    salvarPartida(repositorio);
+  }
+
+  public void salvarPartida(RepositorioPartida destino) {
     if (partida == null) {
       throw new IllegalStateException("Inicie uma partida antes de salvar.");
     }
@@ -403,7 +422,7 @@ public final class ControladorPartida {
     partida.validarEstado();
 
     try {
-      repositorio.salvar(partida);
+      destino.salvar(partida);
     } catch (IOException e) {
       throw new IllegalStateException("Não foi possível salvar a partida.", e);
     }

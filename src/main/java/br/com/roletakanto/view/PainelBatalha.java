@@ -27,6 +27,7 @@ import br.com.roletakanto.model.PilhaItem;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoBatalha;
 import br.com.roletakanto.model.ResultadoTurno;
+import br.com.roletakanto.service.CatalogoJogo;
 
 /** Apresenta o estado de qualquer ginásio. Cada botão envia uma ação ao controlador. */
 public final class PainelBatalha extends JPanel {
@@ -46,6 +47,10 @@ public final class PainelBatalha extends JPanel {
   private ControladorBatalha controlador;
   private Consumer<ResultadoTurno> aoTerminar = turno -> {};
   private boolean bloqueado;
+  private AudioJogo audio = AudioJogo.SILENCIO;
+  private Runnable aoAbrirMochila = () -> {};
+  private Runnable aoAbrirTroca = () -> {};
+  private Runnable aoAtualizar = () -> {};
 
   public PainelBatalha() {
     super(new BorderLayout(12, 12));
@@ -85,9 +90,16 @@ public final class PainelBatalha extends JPanel {
     turno.add(acoes, BorderLayout.SOUTH);
     add(turno, BorderLayout.SOUTH);
 
-    mochila.addActionListener(evento -> abrirMochila());
-    trocar.addActionListener(evento -> escolherTroca());
+    mochila.addActionListener(evento -> aoAbrirMochila.run());
+    trocar.addActionListener(evento -> aoAbrirTroca.run());
     atualizarStatus();
+  }
+
+  void configurarInteracoes(AudioJogo audio, Runnable abrirMochila, Runnable abrirTroca, Runnable atualizar) {
+    this.audio = audio;
+    aoAbrirMochila = abrirMochila;
+    aoAbrirTroca = abrirTroca;
+    aoAtualizar = atualizar;
   }
 
   private static JPanel criarLado(String nome, CartaoPokemon cartao) {
@@ -138,7 +150,10 @@ public final class PainelBatalha extends JPanel {
         JButton botao = EstiloJogo.criarBotao(golpe.getNome() + " · " + contador, !golpe.ehIlimitado());
         botao.setEnabled(podeAgir && ativo.estaApto() && (golpe.ehIlimitado() || usos > 0));
         botao.setToolTipText(golpe.ehIlimitado() ? "Golpe básico · usos ilimitados" : "Golpe especial · usos restantes");
-        botao.addActionListener(evento -> executar(() -> controlador.executarGolpe(golpe.getId())));
+        botao.addActionListener(evento -> {
+          audio.efeito(AudioJogo.Efeito.CONFIRMA);
+          executar(() -> controlador.executarGolpe(golpe.getId()));
+        });
         golpes.add(botao);
       }
     }
@@ -170,44 +185,55 @@ public final class PainelBatalha extends JPanel {
         .toList();
   }
 
-  private List<Pokemon> trocasDisponiveis() {
+  List<Pokemon> trocasDisponiveis() {
     return partida.getJogador().getEquipe().listar().stream().filter(batalha::podeTrocar).toList();
   }
 
-  private void abrirMochila() {
-    if (!podeAgir()) {
-      return;
+  String usarItem(String id) {
+    var inventario = partida.getJogador().getMochila();
+    PilhaItem antes = inventario.obterPilhaPorId(id);
+    int quantidade = antes == null ? 0 : antes.getQuantidade();
+    var turno = executar(() -> controlador.usarItem(id));
+    PilhaItem depois = inventario.obterPilhaPorId(id);
+    if (quantidade > (depois == null ? 0 : depois.getQuantidade())) {
+      audio.efeito(CatalogoJogo.ID_REVIVER.equals(id) ? AudioJogo.Efeito.REVIVER : AudioJogo.Efeito.CURA);
     }
-    PilhaItem item = MochilaVisual.escolher(this, itensDisponiveis(), visuais);
-    if (item != null) {
-      executar(() -> controlador.usarItem(item.getItem().getId()));
-    }
+    return turno.mensagens().isEmpty() ? " " : turno.mensagens().getFirst();
   }
 
-  private void escolherTroca() {
-    if (!podeAgir()) {
-      return;
-    }
-    Pokemon escolhido = MochilaVisual.escolherPokemon(this, "Trocar Pokémon", trocasDisponiveis());
-    if (escolhido != null) {
-      executar(() -> controlador.trocarPokemon(escolhido.getId()));
-    }
+  void trocarPor(Pokemon escolhido) {
+    executar(() -> controlador.trocarPokemon(escolhido.getId()));
   }
 
-  private void executar(Supplier<ResultadoTurno> acao) {
+  private ResultadoTurno executar(Supplier<ResultadoTurno> acao) {
     if (!podeAgir()) {
-      return;
+      return new ResultadoTurno(List.of("Aguarde o fim do turno."), ResultadoBatalha.EM_ANDAMENTO, null);
     }
     bloquearAcoes(true);
     try {
-      // O controlador aplica a ação e o modelo decide o ativo e o resultado do turno.
+      Pokemon aliado = batalha.obterAtivoJogador();
+      Pokemon rival = batalha.getAtivoLider();
+      int hpAliado = aliado.getHpAtual();
+      int hpRival = rival.getHpAtual();
       ResultadoTurno turno = acao.get();
       turno.mensagens().forEach(this::adicionarMensagem);
+      if (rival.getHpAtual() < hpRival) {
+        audio.efeito(AudioJogo.Efeito.ATAQUE);
+      }
+      if (aliado.getHpAtual() < hpAliado) {
+        audio.efeito(AudioJogo.Efeito.DANO);
+      }
+      if ((hpAliado > 0 && !aliado.estaApto()) || (hpRival > 0 && !rival.estaApto())) {
+        audio.efeito(AudioJogo.Efeito.DESMAIO);
+      }
+      aoAtualizar.run();
       if (turno.resultado() != ResultadoBatalha.EM_ANDAMENTO) {
         aoTerminar.accept(turno);
       }
+      return turno;
     } catch (IllegalStateException erro) {
       adicionarMensagem(erro.getMessage());
+      return new ResultadoTurno(List.of(erro.getMessage()), ResultadoBatalha.EM_ANDAMENTO, null);
     } finally {
       bloquearAcoes(false);
     }

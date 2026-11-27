@@ -1,89 +1,70 @@
-
 package br.com.roletakanto.view;
 
 import java.awt.GraphicsDevice;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.nio.file.Path;
+
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 import br.com.roletakanto.controller.ControladorPartida;
-import br.com.roletakanto.service.CatalogoJogo;
+import br.com.roletakanto.persistence.SalvamentosJogador;
 
-/** Entrada da campanha Swing, com menu, iniciais, rotas e combates na mesma janela. */
+/** Abre a campanha completa em Swing, com os vídeos nos cartões de entrada. */
 public final class TestePainelMenu {
+  private TestePainelMenu() {}
 
-    private TestePainelMenu() {
-    }
+  public static void main(String[] args) {
+    SwingUtilities.invokeLater(TestePainelMenu::abrirPrevia);
+  }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(TestePainelMenu::abrirPrevia);
-    }
+  private static void abrirPrevia() {
+    NavegadorTelas navegador = new NavegadorTelas();
+    AudioJogo audio = new AudioJogo();
+    FluxoEntrada entrada = new FluxoEntrada(navegador, new ControladorPartida(),
+        new SalvamentosJogador(Path.of("saves")), audio);
 
-    private static void abrirPrevia() {
-        NavegadorTelas navegador = new NavegadorTelas();
-        FluxoCampanha campanha = registrarTelas(navegador, new ControladorPartida());
+    JFrame janela = new JFrame("Roleta Kanto");
+    janela.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+    janela.setUndecorated(true);
+    janela.setContentPane(navegador);
+    janela.getRootPane().registerKeyboardAction(evento -> {
+      if ("login".equals(navegador.getTelaAtual())) {
+        janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
+      } else {
+        entrada.voltar();
+      }
+    }, KeyStroke.getKeyStroke("ESCAPE"), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
-        JFrame janela = new JFrame("Teste - Roleta Kanto");
-        janela.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        janela.setUndecorated(true);
-        janela.setContentPane(navegador);
-        janela.getRootPane().registerKeyboardAction(evento -> {
-            if ("rota".equals(navegador.getTelaAtual())) {
-                if (!campanha.rotaGirando()) {
-                    navegador.mostrar("inicial");
-                }
-            } else if ("inicial".equals(navegador.getTelaAtual())) {
-                navegador.mostrar("menu");
-            } else if ("menu".equals(navegador.getTelaAtual())) {
-                janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
-            } else if ("login".equals(navegador.getTelaAtual())) {
-                janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
-            }
-        }, KeyStroke.getKeyStroke("ESCAPE"), JComponent.WHEN_IN_FOCUSED_WINDOW);
+    janela.pack();
+    janela.setLocationRelativeTo(null);
+    GraphicsDevice monitor = janela.getGraphicsConfiguration().getDevice();
+    janela.addWindowListener(new WindowAdapter() {
+      @Override
+      public void windowClosing(WindowEvent evento) {
+        if (!entrada.campanha().salvarSeJogando()) {
+          return;
+        }
+        if (monitor.getFullScreenWindow() == janela) {
+          monitor.setFullScreenWindow(null);
+        }
+        janela.dispose();
+      }
 
-        // A tela cheia usa o tamanho real do monitor, inclusive em 4K.
-        janela.pack();
-        janela.setLocationRelativeTo(null);
-        GraphicsDevice monitor = janela.getGraphicsConfiguration().getDevice();
-        janela.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent evento) {
-                if (monitor.getFullScreenWindow() == janela) {
-                    monitor.setFullScreenWindow(null);
-                }
-            }
+      @Override
+      public void windowClosed(WindowEvent evento) {
+        audio.close();
+        FundoVideo.encerrarJavaFxDaPrevia();
+      }
+    });
+    monitor.setFullScreenWindow(janela);
+  }
 
-            @Override
-            public void windowClosed(WindowEvent evento) {
-                FundoVideo.encerrarJavaFxDaPrevia();
-            }
-        });
-        monitor.setFullScreenWindow(janela);
-    }
-
-    static FluxoCampanha registrarTelas(NavegadorTelas navegador, ControladorPartida controlador) {
-        PainelLogin login = new PainelLogin();
-        PainelMenu menu = new PainelMenu(() -> navegador.mostrar("inicial"));
-        PainelInicial inicial = new PainelInicial();
-        var especies = new CatalogoJogo().carregarEspecies();
-        inicial.exibirOpcoes(java.util.List.of(
-            especies.get("bulbasaur"),
-            especies.get("charmander"),
-            especies.get("squirtle")));
-        navegador.registrar("login", login);
-        navegador.registrar("menu", menu);
-        navegador.registrar("inicial", inicial);
-        FluxoCampanha campanha = new FluxoCampanha(navegador, controlador);
-        login.definirAcaoContinuar(nome -> {
-            campanha.definirNomeCandidato(nome);
-            inicial.apresentarCandidato(nome);
-            navegador.mostrar("menu");
-        });
-        inicial.definirAcaoConfirmar(campanha::iniciar);
-        navegador.mostrar("login");
-        return campanha;
-    }
+  static FluxoCampanha registrarTelas(NavegadorTelas navegador, ControladorPartida controlador) {
+    return new FluxoEntrada(navegador, controlador, new SalvamentosJogador(Path.of("saves")),
+        AudioJogo.SILENCIO).campanha();
+  }
 }

@@ -4,6 +4,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.HierarchyEvent;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
@@ -20,12 +22,15 @@ import javafx.scene.paint.Color;
 /** Hospeda o vídeo JavaFX atrás dos controles Swing de uma tela. */
 final class FundoVideo extends JFXPanel {
     private static final long serialVersionUID = 1L;
+    // A coleção e os players são acessados somente pela thread do JavaFX.
+    private static final Set<MediaPlayer> PLAYERS = new HashSet<>();
 
     private final String caminhoVideo;
     private final boolean repetirVideo;
 
     // O player é criado, usado e liberado na thread do JavaFX.
     private transient MediaPlayer player;
+    private volatile boolean deveTocar;
 
     FundoVideo(String nomeArquivo, boolean repetirVideo) {
         caminhoVideo = "/assets/backgrounds/" + nomeArquivo;
@@ -35,13 +40,13 @@ final class FundoVideo extends JFXPanel {
         // O Swing avisa quando o painel aparece ou sai da tela.
         addHierarchyListener(evento -> {
             if ((evento.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
-                boolean visivel = isShowing();
+                deveTocar = isShowing();
                 // Agenda a reprodução na thread do JavaFX a partir do evento do Swing.
                 Platform.runLater(() -> {
-                    if (visivel) {
+                    if (deveTocar) {
                         iniciarVideo();
                     } else {
-                        liberarVideo();
+                        pausarVideo();
                     }
                 });
             }
@@ -62,6 +67,7 @@ final class FundoVideo extends JFXPanel {
 
     private void iniciarVideo() {
         if (player != null) {
+            player.play();
             return;
         }
 
@@ -77,6 +83,7 @@ final class FundoVideo extends JFXPanel {
             Media midia = new Media(arquivo.toExternalForm());
             MediaPlayer novoPlayer = new MediaPlayer(midia);
             player = novoPlayer;
+            PLAYERS.add(novoPlayer);
 
             // MediaView exibe os quadros. O tamanho e a posição são calculados abaixo.
             MediaView video = new MediaView(novoPlayer);
@@ -89,7 +96,12 @@ final class FundoVideo extends JFXPanel {
             area.widthProperty().addListener((obs, anterior, atual) -> ajustar.run());
             area.heightProperty().addListener((obs, anterior, atual) -> ajustar.run());
             // As dimensões do MP4 ficam disponíveis quando o player está pronto.
-            novoPlayer.setOnReady(ajustar);
+            novoPlayer.setOnReady(() -> {
+                ajustar.run();
+                if (deveTocar) {
+                    novoPlayer.play();
+                }
+            });
             midia.setOnError(() -> tratarFalha(novoPlayer, midia.getError()));
             novoPlayer.setOnError(() -> tratarFalha(novoPlayer, novoPlayer.getError()));
 
@@ -97,7 +109,6 @@ final class FundoVideo extends JFXPanel {
             novoPlayer.setCycleCount(repetirVideo ? MediaPlayer.INDEFINITE : 1);
             novoPlayer.setMute(true);
             setScene(new Scene(area, Color.web("#7E59D6")));
-            novoPlayer.play();
         } catch (MediaException erro) {
             tratarFalha(player, erro);
         }
@@ -123,13 +134,12 @@ final class FundoVideo extends JFXPanel {
         video.setY((altura - alturaVideo) / 2);
     }
 
-    private void liberarVideo() {
+    private void pausarVideo() {
         if (player != null) {
-            // Desconecta a cena e libera os recursos da reprodução ao sair da tela.
-            MediaPlayer anterior = player;
-            player = null;
-            setScene(null);
-            anterior.dispose();
+            // Mantém a cena ligada enquanto a janela existir. O JFXPanel pode
+            // ter atualizações de escala pendentes ao alternar os cartões.
+            player.pause();
+            player.seek(javafx.util.Duration.ZERO);
         }
     }
 
@@ -137,12 +147,19 @@ final class FundoVideo extends JFXPanel {
         // Um aviso atrasado de um player antigo não deve interromper o vídeo atual.
         if (playerComFalha == player) {
             System.err.println("Não foi possível reproduzir " + caminhoVideo + ": " + erro.getMessage());
-            liberarVideo();
+            if (player != null) {
+                PLAYERS.remove(player);
+                player.dispose();
+            }
+            player = null;
         }
     }
 
     static void encerrarJavaFxDaPrevia() {
-        // O fechamento da janela já agendou a liberação dos vídeos na fila do JavaFX.
-        Platform.runLater(Platform::exit);
+        Platform.runLater(() -> {
+            PLAYERS.forEach(MediaPlayer::dispose);
+            PLAYERS.clear();
+            Platform.exit();
+        });
     }
 }

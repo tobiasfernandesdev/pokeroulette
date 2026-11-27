@@ -6,9 +6,11 @@ import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.Dimension;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.AbstractButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -101,6 +103,31 @@ final class EstiloJogo {
       }
     });
     return botao;
+  }
+
+  /** Acabamento dos controles de entrada e dos cartões selecionáveis. */
+  static void personalizarEntrada(AbstractButton botao, boolean principal, int largura, int altura) {
+    Color normal = principal ? AMARELO : LILAS_CLARO;
+    Color destaque = principal ? ROSA : LAVANDA;
+    botao.setFont(fonte(Font.BOLD, 14));
+    botao.setPreferredSize(new Dimension(largura, altura));
+    botao.setRolloverEnabled(true);
+    botao.setFocusPainted(true);
+    botao.setOpaque(true);
+    Runnable atualizar = () -> {
+      var modelo = botao.getModel();
+      Color cor = !botao.isEnabled() ? new Color(0xD7CDE3)
+          : modelo.isPressed() ? ROSA
+          : modelo.isSelected() ? AMARELO
+          : modelo.isRollover() ? AZUL_LAVANDA : normal;
+      botao.setBackground(cor);
+      botao.setForeground(botao.isEnabled() ? ROXO_ESCURO : new Color(0x675974));
+      botao.setBorder(BorderFactory.createCompoundBorder(
+          BorderFactory.createMatteBorder(0, 0, 3, 3, new Color(0x5F3C79)),
+          bordaComMargem(ROXO_ESCURO, modelo.isSelected() ? MAGENTA : destaque, 5)));
+    };
+    botao.getModel().addChangeListener(evento -> atualizar.run());
+    atualizar.run();
   }
 
   static void aplicarAcessibilidade(JComponent componente, String nome, String descricao) {

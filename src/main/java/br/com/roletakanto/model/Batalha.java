@@ -12,6 +12,8 @@ import br.com.roletakanto.service.CalculadoraDano;
 import br.com.roletakanto.service.SeletorAcaoIA;
 
 public final class Batalha implements Serializable {
+  // Mantém compatibilidade com batalhas salvas antes de expor o alvo à interface.
+  private static final long serialVersionUID = -8646141289541610378L;
   private static final int USOS_MAXIMOS_GOLPE_JOGADOR = 10;
   // Keep type advantages meaningful without allowing leaders to routinely one-shot the team.
   private static final double MULTIPLICADOR_DANO_LIDER = 0.65;
@@ -151,7 +153,7 @@ public final class Batalha implements Serializable {
   }
 
   private ResultadoTurno processarItemJogador(AcaoBatalha acao, List<String> mensagens) {
-    Pokemon alvoItem = definirAlvoItem(acao.idAlvo());
+    Pokemon alvoItem = alvoDoItem(acao.idAlvo());
 
     if (alvoItem == null) {
       return criarResultadoInvalido("Nenhum Pokémon válido para usar o item.");
@@ -427,7 +429,8 @@ private void aplicarGolpe(
     return ativoLider;
   }
 
-  private Pokemon definirAlvoItem(String idItem){
+  /** Alvo que o motor usará neste turno, também apresentado na mochila. */
+  public Pokemon alvoDoItem(String idItem) {
       if (idItem == null || idItem.isBlank()) {
         return null;
       }

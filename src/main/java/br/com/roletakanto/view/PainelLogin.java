@@ -20,7 +20,7 @@ public final class PainelLogin extends JPanel {
   private static final long serialVersionUID = 1L;
 
   private final JTextField campoNome = new JTextField(22);
-  private final JButton continuar = EstiloJogo.criarBotao("CONTINUAR", true);
+  private final JButton continuar = new JButton("ENTRAR NO MENU");
   private final JLabel mensagem = EstiloJogo.texto(" ", 12, EstiloJogo.MAGENTA);
   private transient Consumer<String> aoContinuar = nome -> {};
 
@@ -66,6 +66,7 @@ public final class PainelLogin extends JPanel {
 
     JPanel rodape = new JPanel(new GridBagLayout());
     rodape.setOpaque(false);
+    EstiloJogo.personalizarEntrada(continuar, true, 230, 52);
     continuar.setEnabled(false);
     continuar.addActionListener(evento -> confirmarNome());
     rodape.add(continuar);
@@ -104,10 +105,14 @@ public final class PainelLogin extends JPanel {
   }
 
   private void confirmarNome() {
-    String nome = campoNome.getText().trim();
+    String nome = campoNome.getText().strip();
     if (nome.isEmpty()) {
       mensagem.setText("Informe seu nome para continuar.");
       continuar.setEnabled(false);
+      return;
+    }
+    if (nome.length() > 48 || nome.codePoints().anyMatch(Character::isISOControl)) {
+      mensagem.setText("Use um nome com até 48 caracteres.");
       return;
     }
     aoContinuar.accept(nome);

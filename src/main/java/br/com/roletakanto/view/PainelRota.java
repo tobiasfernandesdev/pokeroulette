@@ -18,7 +18,6 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -28,7 +27,6 @@ import javax.swing.Timer;
 
 import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.controller.ResultadoGiro;
-import br.com.roletakanto.model.EscolhaEventoRota;
 import br.com.roletakanto.model.Jogador;
 import br.com.roletakanto.model.LiderGinasio;
 import br.com.roletakanto.model.Partida;
@@ -36,9 +34,7 @@ import br.com.roletakanto.model.PilhaItem;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoRoleta;
 import br.com.roletakanto.model.Rota;
-import br.com.roletakanto.model.ContextoUsoItem;
 import br.com.roletakanto.model.FasePartida;
-import br.com.roletakanto.service.CatalogoJogo;
 
 /** Tela da rota com equipe, roleta, líder, mochila e navegação da campanha. */
 public final class PainelRota extends JPanel {
@@ -78,6 +74,9 @@ public final class PainelRota extends JPanel {
   private Runnable aoAbrirEquipe = () -> {};
   private Runnable aoAbrirMochila = () -> {};
   private Runnable aoAvancar = () -> {};
+  private Runnable aoAbrirEvento = () -> {};
+  private Runnable aoGiroConcluido = () -> {};
+  private AudioJogo audio = AudioJogo.SILENCIO;
 
   public PainelRota() {
     super(new BorderLayout(12, 12));
@@ -113,6 +112,12 @@ public final class PainelRota extends JPanel {
     aoAbrirEquipe = abrirEquipe == null ? () -> {} : abrirEquipe;
     aoAbrirMochila = abrirMochila == null ? () -> {} : abrirMochila;
     aoAvancar = avancar == null ? () -> {} : avancar;
+  }
+
+  void configurarInteracoes(AudioJogo audio, Runnable abrirEvento, Runnable giroConcluido) {
+    this.audio = audio;
+    aoAbrirEvento = abrirEvento;
+    aoGiroConcluido = giroConcluido;
   }
 
   public void apresentar(Partida partida) {
@@ -347,62 +352,11 @@ public final class PainelRota extends JPanel {
     botaoEquipe.addActionListener(evento -> {
       aoAbrirEquipe.run();
     });
-    botaoMochila.addActionListener(evento -> abrirMochila());
-    botaoEvento.addActionListener(evento -> visitarEventoOpcional());
+    botaoMochila.addActionListener(evento -> aoAbrirMochila.run());
+    botaoEvento.addActionListener(evento -> aoAbrirEvento.run());
     botaoAvancar.addActionListener(evento -> avancarCampanha());
   }
 
-  private void abrirMochila() {
-    if (controlador == null || partida == null || partida.getFase() != FasePartida.ROTA) {
-      return;
-    }
-    aoAbrirMochila.run();
-    var mochila = jogador.getMochila();
-    PilhaItem pilha = MochilaVisual.escolher(this, mochila.listar().stream()
-        .filter(item -> item.getItem().podeUsarEm(partida.getFase())).toList(), visuais);
-    if (pilha == null) {
-      return;
-    }
-    String id = pilha.getItem().getId();
-    if (CatalogoJogo.ID_POKEBOLA_DOURADA.equals(id)) {
-      mostrarMensagem(controlador.usarGiroBonus(), false);
-    } else {
-      Pokemon alvo = MochilaVisual.escolherPokemon(this, pilha.getItem().getNome(),
-          jogador.getEquipe().listar());
-      if (alvo == null) {
-        return;
-      }
-      var uso = mochila.usar(id, new ContextoUsoItem(partida, null, alvo));
-      mostrarMensagem(uso.mensagem(), !uso.sucesso());
-    }
-    apresentar(partida);
-  }
-
-  private void visitarEventoOpcional() {
-    if (controlador == null || rota == null || !rota.eventoOpcionalDisponivel()) {
-      mostrarMensagem("O evento opcional desta rota não está disponível.", true);
-      return;
-    }
-
-    Object[] opcoes = {"Descansar", "Pegar Super Poção", "Cancelar"};
-    int escolha = JOptionPane.showOptionDialog(
-        this,
-        "Escolha uma recompensa para esta rota.",
-        "Evento opcional",
-        JOptionPane.DEFAULT_OPTION,
-        JOptionPane.QUESTION_MESSAGE,
-        null,
-        opcoes,
-        opcoes[0]);
-    if (escolha == 0) {
-      mostrarMensagem(controlador.usarEventoOpcional(EscolhaEventoRota.DESCANSO), false);
-    } else if (escolha == 1) {
-      mostrarMensagem(controlador.usarEventoOpcional(EscolhaEventoRota.SUPRIMENTOS), false);
-    } else {
-      return;
-    }
-    apresentar(controlador.getPartida());
-  }
 
   private void executarGiro() {
     if (animacao != null) {
@@ -420,20 +374,35 @@ public final class PainelRota extends JPanel {
     }
 
     iniciarAnimacao();
+    audio.efeito(AudioJogo.Efeito.GIRO);
     desenhador.definirResultado(null);
     double inicio = desenhador.getAngulo();
     double destino = desenhador.calcularAnguloDestino(giro.resultado(), 5);
     long comeco = System.nanoTime();
+    long[] ultimoTick = {comeco};
     animacao = new Timer(16, evento -> {
       double decorrido = (System.nanoTime() - comeco) / 1_000_000.0;
       double progressoGiro = Math.min(1.0, decorrido / DURACAO_GIRO_MS);
       double suavizado = 1.0 - Math.pow(1.0 - progressoGiro, 3.0);
       desenhador.definirAngulo(inicio + (destino - inicio) * suavizado);
+      long agora = System.nanoTime();
+      long intervalo = (long) (105 + 320 * progressoGiro * progressoGiro) * 1_000_000;
+      if (progressoGiro < 1.0 && agora - ultimoTick[0] >= intervalo) {
+        audio.efeito(AudioJogo.Efeito.TICK);
+        ultimoTick[0] = agora;
+      }
       if (progressoGiro >= 1.0) {
+        audio.pararGiro();
         pararAnimacao();
         mostrarResultado(giro.resultado());
         apresentar(controlador.getPartida());
         mostrarMensagem(giro.mensagem(), false);
+        audio.efeito(switch (giro.resultado().tipo()) {
+          case POKEMON -> AudioJogo.Efeito.POKEMON;
+          case ITEM -> AudioJogo.Efeito.ITEM;
+          case EVENTO -> AudioJogo.Efeito.EVENTO;
+        });
+        aoGiroConcluido.run();
       }
     });
     animacao.start();
@@ -558,7 +527,7 @@ public final class PainelRota extends JPanel {
         && partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA);
   }
 
-  private void mostrarMensagem(String texto, boolean erro) {
+  void mostrarMensagem(String texto, boolean erro) {
     mensagens.setText(texto == null ? "" : texto);
     mensagens.setForeground(erro ? new Color(0xA5, 0x16, 0x4D) : EstiloJogo.ROXO_ESCURO);
   }

@@ -37,11 +37,11 @@ final class TesteFluxoCampanhaSwing {
       });
 
       JTextField campoNome = procurarCampoNome(login);
-      assertFalse(procurar(navegador, "CONTINUAR"::equals).isEnabled());
+      assertFalse(procurar(navegador, "ENTRAR NO MENU"::equals).isEnabled());
       campoNome.setText("   ");
-      assertFalse(procurar(navegador, "CONTINUAR"::equals).isEnabled());
+      assertFalse(procurar(navegador, "ENTRAR NO MENU"::equals).isEnabled());
       campoNome.setText("  Ana  ");
-      clicar(login, "CONTINUAR");
+      clicar(login, "ENTRAR NO MENU");
       assertEquals("menu", navegador.getTelaAtual());
 
       fluxo.iniciar("charmander");
@@ -66,6 +66,43 @@ final class TesteFluxoCampanhaSwing {
       }
       assertEquals(FasePartida.ROTA, partida.getFase());
       assertTrue(contemTexto(navegador, "VITÓRIA NO GINÁSIO · Ana"));
+    });
+  }
+
+  @Test
+  void usaItensEEscolheEventoDentroDoMesmoNavegador() throws Exception {
+    SwingUtilities.invokeAndWait(() -> {
+      NavegadorTelas navegador = new NavegadorTelas();
+      CatalogoJogo catalogo = new CatalogoJogo();
+      ControladorPartida controlador = new ControladorPartida(catalogo, new Random(159L));
+      new FluxoCampanha(navegador, controlador).iniciar("squirtle");
+      var partida = controlador.getPartida();
+      var jogador = partida.getJogador();
+      var pokemon = jogador.getEquipe().listar().getFirst();
+      var mochila = jogador.getMochila();
+      pokemon.receberDano(15);
+      clicar(navegador, "MOCHILA");
+      assertEquals("mochila", navegador.getTelaAtual());
+      assertTrue(contemTexto(navegador, "Poção  ×2"));
+      clicar(navegador, "USAR");
+      assertEquals(pokemon.getHpMaximo(), pokemon.getHpAtual());
+      assertEquals(1, mochila.obterPilhaPorId(CatalogoJogo.ID_POCAO).getQuantidade());
+      var usar = procurar(navegador, "USAR"::equals);
+      assertFalse(usar.isEnabled());
+      usar.doClick(0);
+      assertEquals(1, mochila.obterPilhaPorId(CatalogoJogo.ID_POCAO).getQuantidade());
+      clicar(navegador, "VOLTAR");
+      assertEquals("rota", navegador.getTelaAtual());
+      clicar(navegador, "EVENTO");
+      assertEquals("evento", navegador.getTelaAtual());
+      clicar(navegador, "PEGAR SUPRIMENTOS");
+      var suprimentos = procurar(navegador, "PEGAR SUPRIMENTOS"::equals);
+      assertFalse(suprimentos.isEnabled());
+      suprimentos.doClick(0);
+      assertEquals(1, mochila.obterPilhaPorId(CatalogoJogo.ID_SUPER_POCAO).getQuantidade());
+      clicar(navegador, "VOLTAR");
+      assertEquals("rota", navegador.getTelaAtual());
+      assertFalse(procurar(navegador, "EVENTO"::equals).isEnabled());
     });
   }
 
