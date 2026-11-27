@@ -39,6 +39,8 @@ public final class TestePainelMenu {
                 navegador.mostrar("menu");
             } else if ("menu".equals(navegador.getTelaAtual())) {
                 janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
+            } else if ("login".equals(navegador.getTelaAtual())) {
+                janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
             }
         }, KeyStroke.getKeyStroke("ESCAPE"), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
@@ -63,6 +65,7 @@ public final class TestePainelMenu {
     }
 
     static FluxoCampanha registrarTelas(NavegadorTelas navegador, ControladorPartida controlador) {
+        PainelLogin login = new PainelLogin();
         PainelMenu menu = new PainelMenu(() -> navegador.mostrar("inicial"));
         PainelInicial inicial = new PainelInicial();
         var especies = new CatalogoJogo().carregarEspecies();
@@ -70,10 +73,17 @@ public final class TestePainelMenu {
             especies.get("bulbasaur"),
             especies.get("charmander"),
             especies.get("squirtle")));
+        navegador.registrar("login", login);
         navegador.registrar("menu", menu);
         navegador.registrar("inicial", inicial);
         FluxoCampanha campanha = new FluxoCampanha(navegador, controlador);
+        login.definirAcaoContinuar(nome -> {
+            campanha.definirNomeCandidato(nome);
+            inicial.apresentarCandidato(nome);
+            navegador.mostrar("menu");
+        });
         inicial.definirAcaoConfirmar(campanha::iniciar);
+        navegador.mostrar("login");
         return campanha;
     }
 }

@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.function.Predicate;
 
 import javax.swing.JButton;
+import javax.swing.JTextField;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -20,6 +21,54 @@ import br.com.roletakanto.model.FasePartida;
 import br.com.roletakanto.service.CatalogoJogo;
 
 final class TesteFluxoCampanhaSwing {
+  @Test
+  void identificaCandidatoEExibeNomeNaCampanha() throws Exception {
+    SwingUtilities.invokeAndWait(() -> {
+      NavegadorTelas navegador = new NavegadorTelas();
+      PainelLogin login = new PainelLogin();
+      navegador.registrar("login", login);
+      navegador.registrar("menu", new JPanel());
+      ControladorPartida controlador = new ControladorPartida(new CatalogoJogo(), new Random(159L));
+      FluxoCampanha fluxo = new FluxoCampanha(navegador, controlador);
+      fluxo.definirNomeCandidato("Ana");
+      login.definirAcaoContinuar(nome -> {
+        fluxo.definirNomeCandidato(nome);
+        navegador.mostrar("menu");
+      });
+
+      JTextField campoNome = procurarCampoNome(login);
+      assertFalse(procurar(navegador, "CONTINUAR"::equals).isEnabled());
+      campoNome.setText("   ");
+      assertFalse(procurar(navegador, "CONTINUAR"::equals).isEnabled());
+      campoNome.setText("  Ana  ");
+      clicar(login, "CONTINUAR");
+      assertEquals("menu", navegador.getTelaAtual());
+
+      fluxo.iniciar("charmander");
+      assertEquals("Ana", controlador.getPartida().getJogador().getNome());
+      assertTrue(contemTexto(navegador, "CANDIDATO: ANA"));
+      clicar(navegador, "EQUIPE");
+      assertTrue(contemTexto(navegador, "EQUIPE E RESERVA · Ana"));
+      clicar(navegador, "VOLTAR À ROTA");
+      esgotarGiros(navegador, controlador);
+      clicar(navegador, "AVANÇAR");
+      assertTrue(contemTexto(navegador, "PREPARAÇÃO · Brock · Ana"));
+      clicar(navegador, "DESAFIAR LÍDER");
+      assertTrue(contemTextoComecando(navegador, "Ana  /  GINÁSIO  /  Brock"));
+
+      var partida = controlador.getPartida();
+      for (int turno = 0; turno < 12 && partida.getFase() == FasePartida.BATALHA; turno++) {
+        var combate = partida.getBatalhaAtual();
+        var oponente = combate.getAtivoLider();
+        oponente.receberDano(oponente.getHpAtual() - 1);
+        combate.obterAtivoJogador().restaurarParaCentro();
+        clicar(navegador, texto -> texto.startsWith("Investida ·"));
+      }
+      assertEquals(FasePartida.ROTA, partida.getFase());
+      assertTrue(contemTexto(navegador, "VITÓRIA NO GINÁSIO · Ana"));
+    });
+  }
+
   @Test
   void percorreQuatroGinasiosComResultadosEReiniciaPeloMenu() throws Exception {
     SwingUtilities.invokeAndWait(() -> {
@@ -161,12 +210,41 @@ final class TesteFluxoCampanhaSwing {
     return null;
   }
 
+  private static JTextField procurarCampoNome(Container raiz) {
+    for (Component filho : raiz.getComponents()) {
+      if (filho instanceof JTextField campo) {
+        return campo;
+      }
+      if (filho instanceof Container container) {
+        JTextField resultado = procurarCampoNome(container);
+        if (resultado != null) {
+          return resultado;
+        }
+      }
+    }
+    return null;
+  }
+
   private static boolean contemTexto(Container raiz, String texto) {
     for (Component filho : raiz.getComponents()) {
       if (filho instanceof javax.swing.JLabel label && texto.equals(label.getText())) {
         return true;
       }
       if (filho instanceof Container container && contemTexto(container, texto)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean contemTextoComecando(Container raiz, String prefixo) {
+    for (Component filho : raiz.getComponents()) {
+      if (filho instanceof javax.swing.JLabel label
+          && label.getText() != null
+          && label.getText().startsWith(prefixo)) {
+        return true;
+      }
+      if (filho instanceof Container container && contemTextoComecando(container, prefixo)) {
         return true;
       }
     }

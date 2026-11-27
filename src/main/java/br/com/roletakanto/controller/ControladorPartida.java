@@ -66,6 +66,14 @@ public final class ControladorPartida {
 
   /** Cria uma campanha e coloca o Pokemon inicial na equipe do jogador. */
   public void novaPartida(String idInicial) {
+    novaPartida(idInicial, "Jogador");
+  }
+
+  /** Cria uma campanha associada ao nome informado na tela de identificação. */
+  public void novaPartida(String idInicial, String nomeJogador) {
+    if (nomeJogador == null || nomeJogador.isBlank()) {
+      throw new IllegalArgumentException("O nome do jogador é obrigatório.");
+    }
     Item pocao = itens.get(CatalogoJogo.ID_POCAO);
     Mochila mochila = new Mochila();
     if (pocao == null) {
@@ -81,7 +89,7 @@ public final class ControladorPartida {
 
     Equipe equipe = new Equipe();
     equipe.adicionar(inicial.criarInstancia());
-    Jogador jogador = new Jogador("Jogador", equipe, new Reserva(), mochila);
+    Jogador jogador = new Jogador(nomeJogador.trim(), equipe, new Reserva(), mochila);
     partida = Partida.nova(jogador, catalogo.criarRotas(random), catalogo.criarLideres());
   }
 

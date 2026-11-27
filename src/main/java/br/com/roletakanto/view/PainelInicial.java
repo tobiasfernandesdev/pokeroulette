@@ -23,6 +23,7 @@ public final class PainelInicial extends JPanel {
 
     private final JPanel botoesIniciais = new JPanel(new GridLayout(1, 0, 16, 0));
     private final JLabel detalhe = new JLabel(" ", SwingConstants.CENTER);
+    private final JLabel candidato = new JLabel(" ", SwingConstants.CENTER);
     private final JButton confirmar = EstiloJogo.criarBotao("ESCOLHER", true);
     private ButtonGroup selecao = new ButtonGroup();
     private transient Consumer<String> aoConfirmar = id -> {};
@@ -38,6 +39,9 @@ public final class PainelInicial extends JPanel {
         JPanel controles = new JPanel(new BorderLayout(0, 16));
         controles.setOpaque(false);
         botoesIniciais.setOpaque(false);
+        candidato.setForeground(new Color(49, 23, 76));
+        candidato.setFont(EstiloJogo.fonte(Font.BOLD, 14));
+        controles.add(candidato, BorderLayout.NORTH);
         detalhe.setForeground(new Color(49, 23, 76));
         detalhe.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         controles.add(botoesIniciais, BorderLayout.CENTER);
@@ -89,6 +93,10 @@ public final class PainelInicial extends JPanel {
 
     public void definirAcaoConfirmar(Consumer<String> acao) {
         aoConfirmar = acao == null ? id -> {} : acao;
+    }
+
+    public void apresentarCandidato(String nome) {
+        candidato.setText("CANDIDATO: " + nome);
     }
 
     public void mostrarDetalhe(EspeciePokemon especie) {

@@ -48,6 +48,7 @@ public final class PainelRota extends JPanel {
   private final VisualPokemon visuais = new VisualPokemon();
   private final DesenhadorRoleta desenhador = new DesenhadorRoleta();
   private final JLabel nomeRota = criarTexto("ROTA ATUAL", 17, EstiloJogo.ROXO_ESCURO);
+  private final JLabel nomeJogador = criarTexto("CANDIDATO: JOGADOR", 11, EstiloJogo.ROXO);
   private final JLabel giros = criarTexto("GIROS 0", 15, EstiloJogo.ROXO_ESCURO);
   private final JLabel progresso = criarTexto("ROTA 1 / 1", 12, EstiloJogo.ROXO_ESCURO);
   private final JProgressBar barraCampanha = new JProgressBar();
@@ -139,6 +140,7 @@ public final class PainelRota extends JPanel {
     }
     this.rota = rota;
     this.jogador = jogador;
+    nomeJogador.setText("CANDIDATO: " + jogador.getNome().toUpperCase(java.util.Locale.ROOT));
     nomeRota.setText(rota.getNome().toUpperCase());
     desenhador.definirSegmentos(rota.getRoleta().getSegmentos());
     atualizarGiros(rota.getGirosRestantes());
@@ -200,6 +202,8 @@ public final class PainelRota extends JPanel {
     faixa.weightx = 1;
     faixa.insets = new Insets(0, 0, 4, 0);
     centro.add(nomeRota, faixa);
+    faixa.gridy++;
+    centro.add(nomeJogador, faixa);
     faixa.gridy++;
     centro.add(progresso, faixa);
     barraCampanha.setForeground(EstiloJogo.MAGENTA);

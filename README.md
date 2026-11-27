@@ -31,7 +31,7 @@ Configure o projeto para usar um JDK 25 ou superior. O Maven compila o projeto c
 
 ### Campanha Swing
 
-Use o perfil `previa-menu` para abrir `TestePainelMenu`. A mesma janela reúne o menu, a escolha do inicial, as quatro rotas, a organização da equipe e os ginásios. Após cada vitória, a tela de resultado mostra a insígnia e abre a próxima rota. O Maven prepara o JavaFX dos vídeos em um diretório separado. A primeira execução precisa baixar as dependências.
+Use o perfil `previa-menu` para abrir `TestePainelMenu`. A identificação inicial pede apenas o nome do candidato, sem autenticação; esse nome aparece nas telas da campanha. A mesma janela reúne o menu, a escolha do inicial, as quatro rotas, a organização da equipe e os ginásios. Após cada vitória, a tela de resultado mostra a insígnia e abre a próxima rota. O Maven prepara o JavaFX dos vídeos em um diretório separado. A primeira execução precisa baixar as dependências.
 
 ```powershell
 mvn -Pprevia-menu javafx:run

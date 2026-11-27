@@ -110,7 +110,8 @@ public final class PainelBatalha extends JPanel {
     if (this.batalha != batalha && batalha != null) {
       var lider = batalha.getLider();
       String tipo = lider.getEquipe().isEmpty() ? "" : "  ·  " + lider.getEquipe().getFirst().getTipo();
-      titulo.setText("GINÁSIO  /  " + lider.getNome() + tipo);
+      String nomeJogador = partida == null ? "JOGADOR" : partida.getJogador().getNome();
+      titulo.setText(nomeJogador + "  /  GINÁSIO  /  " + lider.getNome() + tipo);
       titulo.setIcon(visuais.carregarLider(lider.getId(), 40, 40));
       arena.cenario = CenarioPixel.doLider(lider.getId());
       mensagens.setText("");

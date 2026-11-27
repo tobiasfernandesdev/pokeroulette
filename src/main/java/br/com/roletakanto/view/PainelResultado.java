@@ -72,11 +72,13 @@ public final class PainelResultado extends JPanel {
     retrato.setToolTipText(lider.getNome());
     mostrarResumo(partida);
     if (turno.resultado() == ResultadoBatalha.DERROTA) {
-      mostrarDerrota("A campanha terminou no ginásio de " + lider.getNome() + ".");
+      mostrarDerrota(partida.getJogador().getNome() + ", a campanha terminou no ginásio de "
+          + lider.getNome() + ".");
     } else {
       mostrarVitoria(lider.getInsignia());
+      titulo.setText("VITÓRIA NO GINÁSIO · " + partida.getJogador().getNome());
       if (partida.getFase() == FasePartida.VITORIA_FINAL) {
-        titulo.setText("VITÓRIA FINAL · CAMPEÃ(O) DE KANTO");
+        titulo.setText("VITÓRIA FINAL · " + partida.getJogador().getNome());
       }
     }
     if (!turno.mensagens().isEmpty()) {
