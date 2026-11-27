@@ -9,7 +9,7 @@ de margens transparentes.
 
 ## Acervos e direitos
 
-- [PokeAPI/sprites](https://github.com/PokeAPI/sprites): 20 Pokémon da geração V e quatro ícones de itens. A [licença original](licenses/PokeAPI-LICENCE.txt) inclui CC0, mas declara expressamente que o conteúdo das imagens pertence à The Pokémon Company. Não interpretar CC0 como autorização sobre personagens e marcas.
+- [PokeAPI/sprites](https://github.com/PokeAPI/sprites): 21 sprites da geração V e quatro ícones de itens. A [licença original](licenses/PokeAPI-LICENCE.txt) inclui CC0, mas declara expressamente que o conteúdo das imagens pertence à The Pokémon Company. Não interpretar CC0 como autorização sobre personagens e marcas.
 - [pret/pokefirered](https://github.com/pret/pokefirered): retratos de Misty, Lt. Surge e Erika, extraídos do acervo gráfico de FireRed. São gráficos do jogo Pokémon, não obras originais deste projeto. Direitos dos respectivos titulares (Nintendo, Game Freak e The Pokémon Company).
 - [smogon/pokemon-showdown-client](https://github.com/smogon/pokemon-showdown-client): cenário `bg-gen3-arena.png`. O projeto declara AGPLv3 para seu código; isso não deve ser confundido com uma licença independente para os gráficos Pokémon. Nenhum código desse repositório foi incorporado.
 
@@ -24,12 +24,20 @@ A origem pública no GitHub não garante permissão para qualquer uso. Estes cr�
 - A **Pokébola Dourada** é um item próprio do trabalho. Usamos **Luxury Ball** como representação visual provisória por seus detalhes dourados. O nome, o efeito e o ID do item não foram modificados.
 - Eventos continuam com texto porque não correspondem a um único item ou Pokémon.
 
+## Arte da campanha
+
+Os oito cenários de rota e de ginásio são desenhados no código em `CenarioPixel`.
+O PNG `items/cura_status.png` é uma miniatura original feita para Roleta Kanto.
+Os sprites existentes de Bulbasaur e Wartortle foram renomeados de acordo com a
+espécie ilustrada. Squirtle recebeu um sprite da PokéAPI.
+
 ## Arquivos e versões exatas
 
 As URLs abaixo fixam o commit, evitando que mudanças futuras no repositório alterem a referência.
 
 | Arquivo local em assets | Origem |
 | --- | --- |
+| `pokemon/squirtle.png` | [arquivo original](https://raw.githubusercontent.com/PokeAPI/sprites/c0542f7c51215d9672439012838c99f520596cbd/sprites/pokemon/versions/generation-v/black-white/7.png) |
 | `pokemon/pidgey.png` | [arquivo original](https://raw.githubusercontent.com/PokeAPI/sprites/c0542f7c51215d9672439012838c99f520596cbd/sprites/pokemon/versions/generation-v/black-white/16.png) |
 | `pokemon/rattata.png` | [arquivo original](https://raw.githubusercontent.com/PokeAPI/sprites/c0542f7c51215d9672439012838c99f520596cbd/sprites/pokemon/versions/generation-v/black-white/19.png) |
 | `pokemon/pikachu.png` | [arquivo original](https://raw.githubusercontent.com/PokeAPI/sprites/c0542f7c51215d9672439012838c99f520596cbd/sprites/pokemon/versions/generation-v/black-white/25.png) |

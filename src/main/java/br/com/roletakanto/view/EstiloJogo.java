@@ -1,6 +1,7 @@
 package br.com.roletakanto.view;
 
 import java.awt.Color;
+import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
@@ -9,6 +10,9 @@ import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
 /** Paleta e acabamentos compartilhados pelas telas Swing do jogo. */
@@ -26,6 +30,29 @@ final class EstiloJogo {
   static final Color VERMELHO_HP = new Color(0xE8, 0x5D, 0x75);
 
   private EstiloJogo() {
+  }
+
+  static JPanel painel() {
+    JPanel painel = new JPanel(new BorderLayout(10, 10));
+    painel.setBackground(new Color(0xF4EFFF));
+    painel.setBorder(bordaComMargem(ROXO_ESCURO, LILAS_CLARO, 9));
+    return painel;
+  }
+
+  static JLabel texto(String texto, int tamanho, Color cor) {
+    JLabel label = new JLabel(texto);
+    label.setFont(fonte(Font.BOLD, tamanho));
+    label.setForeground(cor);
+    return label;
+  }
+
+  static JLabel faixa(String texto, int tamanho) {
+    JLabel label = texto(texto, tamanho, ROXO_ESCURO);
+    label.setHorizontalAlignment(SwingConstants.CENTER);
+    label.setOpaque(true);
+    label.setBackground(AZUL_LAVANDA);
+    label.setBorder(bordaComMargem(ROXO_ESCURO, LAVANDA, 6));
+    return label;
   }
 
   static Font fonte(int estilo, int tamanho) {

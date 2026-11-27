@@ -1,18 +1,15 @@
 package br.com.roletakanto.view;
 
-import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.RenderingHints;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -24,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
@@ -38,7 +36,9 @@ import br.com.roletakanto.model.PilhaItem;
 import br.com.roletakanto.model.Pokemon;
 import br.com.roletakanto.model.ResultadoRoleta;
 import br.com.roletakanto.model.Rota;
-import br.com.roletakanto.model.StatusPokemon;
+import br.com.roletakanto.model.ContextoUsoItem;
+import br.com.roletakanto.model.FasePartida;
+import br.com.roletakanto.service.CatalogoJogo;
 
 /** Tela da rota com equipe, roleta, líder, mochila e navegação da campanha. */
 public final class PainelRota extends JPanel {
@@ -71,6 +71,7 @@ public final class PainelRota extends JPanel {
   private ControladorPartida controlador;
   private Partida partida;
   private Rota rota;
+  private CenarioPixel cenario = CenarioPixel.CAMPO;
   private Jogador jogador;
   private Timer animacao;
   private Runnable aoAbrirEquipe = () -> {};
@@ -126,6 +127,15 @@ public final class PainelRota extends JPanel {
   public void apresentar(Rota rota, Jogador jogador) {
     if (rota == null || jogador == null) {
       return;
+    }
+    if (this.rota != rota) {
+      cenario = CenarioPixel.daRota(rota.getId());
+      desenhador.definirAngulo(0);
+      desenhador.definirResultado(null);
+      destaqueResultado.setText("PRÊMIOS DA ROTA");
+      destaqueResultado.setIcon(null);
+      mostrarMensagem("Escolha GIRAR para descobrir o próximo encontro.", false);
+      repaint();
     }
     this.rota = rota;
     this.jogador = jogador;
@@ -183,20 +193,22 @@ public final class PainelRota extends JPanel {
     cabecalho.add(titulo, BorderLayout.WEST);
 
     JPanel centro = painelTransparente();
-    centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
-    nomeRota.setAlignmentX(Component.CENTER_ALIGNMENT);
-    progresso.setAlignmentX(Component.CENTER_ALIGNMENT);
-    centro.add(nomeRota);
-    centro.add(Box.createVerticalStrut(4));
-    centro.add(progresso);
-    centro.add(Box.createVerticalStrut(4));
+    centro.setLayout(new GridBagLayout());
+    GridBagConstraints faixa = new GridBagConstraints();
+    faixa.gridx = 0;
+    faixa.gridy = 0;
+    faixa.weightx = 1;
+    faixa.insets = new Insets(0, 0, 4, 0);
+    centro.add(nomeRota, faixa);
+    faixa.gridy++;
+    centro.add(progresso, faixa);
     barraCampanha.setForeground(EstiloJogo.MAGENTA);
     barraCampanha.setBackground(EstiloJogo.AZUL_LAVANDA);
     barraCampanha.setBorder(EstiloJogo.bordaPixel(EstiloJogo.ROXO_ESCURO, EstiloJogo.LILAS_CLARO));
     barraCampanha.setPreferredSize(new Dimension(260, 14));
-    barraCampanha.setMaximumSize(new Dimension(320, 14));
-    barraCampanha.setAlignmentX(Component.CENTER_ALIGNMENT);
-    centro.add(barraCampanha);
+    faixa.gridy++;
+    faixa.insets = new Insets(0, 0, 0, 0);
+    centro.add(barraCampanha, faixa);
     cabecalho.add(centro, BorderLayout.CENTER);
 
     giros.setHorizontalAlignment(SwingConstants.CENTER);
@@ -245,9 +257,12 @@ public final class PainelRota extends JPanel {
 
   private JPanel criarCentroRoleta() {
     JPanel centro = criarPainelPixel();
+    centro.setOpaque(false);
     centro.setLayout(new BorderLayout(0, 4));
     destaqueResultado.setHorizontalAlignment(SwingConstants.CENTER);
-    destaqueResultado.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 0));
+    destaqueResultado.setOpaque(true);
+    destaqueResultado.setBackground(EstiloJogo.LILAS_CLARO);
+    destaqueResultado.setBorder(BorderFactory.createEmptyBorder(5, 4, 5, 4));
     centro.add(destaqueResultado, BorderLayout.NORTH);
     centro.add(desenhador, BorderLayout.CENTER);
 
@@ -267,9 +282,13 @@ public final class PainelRota extends JPanel {
     titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
     nomeLider.setAlignmentX(Component.CENTER_ALIGNMENT);
     tipoLider.setAlignmentX(Component.CENTER_ALIGNMENT);
+    nomeLider.setHorizontalAlignment(SwingConstants.CENTER);
+    tipoLider.setHorizontalAlignment(SwingConstants.CENTER);
+    nomeLider.setMaximumSize(new Dimension(Integer.MAX_VALUE, nomeLider.getPreferredSize().height));
+    tipoLider.setMaximumSize(new Dimension(Integer.MAX_VALUE, tipoLider.getPreferredSize().height));
     spriteLider.setAlignmentX(Component.CENTER_ALIGNMENT);
-    spriteLider.setPreferredSize(new Dimension(150, 180));
-    spriteLider.setMaximumSize(new Dimension(180, 190));
+    spriteLider.setPreferredSize(new Dimension(150, 144));
+    spriteLider.setMaximumSize(new Dimension(180, 145));
     spriteLider.setFont(EstiloJogo.fonte(Font.BOLD, 42));
     spriteLider.setForeground(EstiloJogo.ROXO);
     lider.add(titulo);
@@ -284,7 +303,13 @@ public final class PainelRota extends JPanel {
     mochila.setLayout(new BorderLayout(0, 7));
     mochila.add(criarTituloSecao("MOCHILA"), BorderLayout.NORTH);
     listaMochila.setLayout(new BoxLayout(listaMochila, BoxLayout.Y_AXIS));
-    mochila.add(listaMochila, BorderLayout.CENTER);
+    JScrollPane rolagem = new JScrollPane(listaMochila);
+    rolagem.setBorder(BorderFactory.createEmptyBorder());
+    rolagem.setOpaque(false);
+    rolagem.getViewport().setOpaque(false);
+    rolagem.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    rolagem.getVerticalScrollBar().setUnitIncrement(24);
+    mochila.add(rolagem, BorderLayout.CENTER);
     painelInformacoes.add(mochila, BorderLayout.CENTER);
     return painelInformacoes;
   }
@@ -316,17 +341,37 @@ public final class PainelRota extends JPanel {
   private void configurarEventos() {
     botaoGirar.addActionListener(evento -> executarGiro());
     botaoEquipe.addActionListener(evento -> {
-      destacarTemporariamente(painelEquipe);
-      mostrarMensagem("Sua equipe e a reserva foram destacadas à esquerda.", false);
       aoAbrirEquipe.run();
     });
-    botaoMochila.addActionListener(evento -> {
-      destacarTemporariamente(painelInformacoes);
-      mostrarMensagem("O resumo atualizado da mochila está à direita.", false);
-      aoAbrirMochila.run();
-    });
+    botaoMochila.addActionListener(evento -> abrirMochila());
     botaoEvento.addActionListener(evento -> visitarEventoOpcional());
     botaoAvancar.addActionListener(evento -> avancarCampanha());
+  }
+
+  private void abrirMochila() {
+    if (controlador == null || partida == null || partida.getFase() != FasePartida.ROTA) {
+      return;
+    }
+    aoAbrirMochila.run();
+    var mochila = jogador.getMochila();
+    PilhaItem pilha = MochilaVisual.escolher(this, mochila.listar().stream()
+        .filter(item -> item.getItem().podeUsarEm(partida.getFase())).toList(), visuais);
+    if (pilha == null) {
+      return;
+    }
+    String id = pilha.getItem().getId();
+    if (CatalogoJogo.ID_POKEBOLA_DOURADA.equals(id)) {
+      mostrarMensagem(controlador.usarGiroBonus(), false);
+    } else {
+      Pokemon alvo = MochilaVisual.escolherPokemon(this, pilha.getItem().getNome(),
+          jogador.getEquipe().listar());
+      if (alvo == null) {
+        return;
+      }
+      var uso = mochila.usar(id, new ContextoUsoItem(partida, null, alvo));
+      mostrarMensagem(uso.mensagem(), !uso.sucesso());
+    }
+    apresentar(partida);
   }
 
   private void visitarEventoOpcional() {
@@ -356,6 +401,9 @@ public final class PainelRota extends JPanel {
   }
 
   private void executarGiro() {
+    if (animacao != null) {
+      return;
+    }
     if (controlador == null) {
       mostrarMensagem("A roleta ainda não foi conectada à partida.", true);
       return;
@@ -397,7 +445,7 @@ public final class PainelRota extends JPanel {
       return;
     }
     try {
-      partida.iniciarOrganizacao();
+      controlador.navegarParaFase(FasePartida.ORGANIZACAO);
       mostrarMensagem("Rota concluída. Organize sua equipe para enfrentar o líder!", false);
       atualizarBotoes();
       aoAvancar.run();
@@ -418,49 +466,8 @@ public final class PainelRota extends JPanel {
   }
 
   private JPanel criarCartaoPokemon(Pokemon pokemon) {
-    JPanel cartao = new JPanel(new BorderLayout(7, 3));
-    cartao.setOpaque(true);
-    cartao.setBackground(EstiloJogo.CREME);
-    cartao.setBorder(EstiloJogo.bordaComMargem(EstiloJogo.ROXO, EstiloJogo.LAVANDA, 5));
-
-    JLabel sprite = new JLabel("◆", SwingConstants.CENTER);
-    sprite.setForeground(EstiloJogo.ROXO);
-    sprite.setFont(EstiloJogo.fonte(Font.BOLD, 24));
-    sprite.setPreferredSize(new Dimension(72, 66));
-    ImageIcon icone = visuais.carregarIcone(pokemon.getEspecie().getId(), 68, 62);
-    if (icone != null) {
-      sprite.setText("");
-      sprite.setIcon(icone);
-    }
-    cartao.add(sprite, BorderLayout.WEST);
-
-    JPanel dados = painelTransparente();
-    dados.setLayout(new BoxLayout(dados, BoxLayout.Y_AXIS));
-    JLabel nome = criarTexto(pokemon.getEspecie().getNome().toUpperCase(), 12, EstiloJogo.ROXO_ESCURO);
-    JLabel tipo = criarTexto(pokemon.getEspecie().getTipo().name(), 9, EstiloJogo.ROXO);
-    nome.setAlignmentX(Component.LEFT_ALIGNMENT);
-    tipo.setAlignmentX(Component.LEFT_ALIGNMENT);
-    JProgressBar hp = new JProgressBar(0, pokemon.getHpMaximo());
-    hp.setValue(pokemon.getHpAtual());
-    hp.setStringPainted(true);
-    hp.setString("HP " + pokemon.getHpAtual() + " / " + pokemon.getHpMaximo());
-    hp.setFont(EstiloJogo.fonte(Font.BOLD, 9));
-    hp.setForeground(pokemon.getHpAtual() * 4 > pokemon.getHpMaximo()
-        ? EstiloJogo.VERDE_HP : EstiloJogo.VERMELHO_HP);
-    hp.setBackground(EstiloJogo.AZUL_LAVANDA);
-    hp.setBorder(BorderFactory.createLineBorder(EstiloJogo.ROXO_ESCURO, 2));
-    hp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
-    hp.setAlignmentX(Component.LEFT_ALIGNMENT);
-    dados.add(nome);
-    dados.add(tipo);
-    if (pokemon.getStatus() != StatusPokemon.NENHUM) {
-      JLabel status = criarTexto(pokemon.getStatus().getDescricao().toUpperCase(), 8, EstiloJogo.MAGENTA);
-      status.setAlignmentX(Component.LEFT_ALIGNMENT);
-      dados.add(status);
-    }
-    dados.add(Box.createVerticalStrut(4));
-    dados.add(hp);
-    cartao.add(dados, BorderLayout.CENTER);
+    CartaoPokemon cartao = new CartaoPokemon(visuais, 58);
+    cartao.apresentar(pokemon);
     return cartao;
   }
 
@@ -514,7 +521,7 @@ public final class PainelRota extends JPanel {
     nomeLider.setText(lider.getNome().toUpperCase());
     String tipo = lider.getEquipe().isEmpty() ? "—" : lider.getEquipe().get(0).getTipo().name();
     tipoLider.setText("TIPO " + tipo);
-    ImageIcon icone = visuais.carregarLider(lider.getId(), 145, 170);
+    ImageIcon icone = visuais.carregarLider(lider.getId(), 136, 134);
     spriteLider.setIcon(icone);
     spriteLider.setText(icone == null ? lider.getNome().substring(0, 1) : "");
   }
@@ -532,6 +539,8 @@ public final class PainelRota extends JPanel {
       return;
     }
     boolean possuiPartida = rota != null && jogador != null;
+    botaoEquipe.setEnabled(possuiPartida);
+    botaoMochila.setEnabled(controlador != null && possuiPartida);
     boolean podeGirar = controlador != null && possuiPartida && rota.temGiroDisponivel()
         && (partida == null || partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA);
     botaoGirar.setEnabled(podeGirar);
@@ -540,7 +549,7 @@ public final class PainelRota extends JPanel {
         && partida != null
         && partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA
         && rota.eventoOpcionalDisponivel());
-    botaoAvancar.setEnabled(possuiPartida && !rota.temGiroDisponivel()
+    botaoAvancar.setEnabled(controlador != null && possuiPartida && !rota.temGiroDisponivel()
         && partida != null
         && partida.getFase() == br.com.roletakanto.model.FasePartida.ROTA);
   }
@@ -548,15 +557,6 @@ public final class PainelRota extends JPanel {
   private void mostrarMensagem(String texto, boolean erro) {
     mensagens.setText(texto == null ? "" : texto);
     mensagens.setForeground(erro ? new Color(0xA5, 0x16, 0x4D) : EstiloJogo.ROXO_ESCURO);
-  }
-
-  private void destacarTemporariamente(JPanel painel) {
-    painel.setBorder(EstiloJogo.bordaComMargem(EstiloJogo.MAGENTA, EstiloJogo.AMARELO, 9));
-    Timer retirar = new Timer(650, evento ->
-        painel.setBorder(EstiloJogo.bordaComMargem(
-            EstiloJogo.ROXO_ESCURO, EstiloJogo.LILAS_CLARO, 9)));
-    retirar.setRepeats(false);
-    retirar.start();
   }
 
   private static String nomeResultado(ResultadoRoleta resultado) {
@@ -605,22 +605,13 @@ public final class PainelRota extends JPanel {
     return label;
   }
 
+  boolean estaGirando() {
+    return animacao != null;
+  }
+
   @Override
   protected void paintComponent(Graphics grafico) {
     super.paintComponent(grafico);
-    Graphics2D desenho = (Graphics2D) grafico.create();
-    try {
-      desenho.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-      desenho.setComposite(AlphaComposite.SrcOver.derive(0.13f));
-      desenho.setColor(EstiloJogo.LILAS_CLARO);
-      int tamanho = 28;
-      for (int y = 0; y < getHeight(); y += tamanho) {
-        for (int x = (y / tamanho % 2) * tamanho; x < getWidth(); x += tamanho * 2) {
-          desenho.fillRect(x, y, tamanho, tamanho);
-        }
-      }
-    } finally {
-      desenho.dispose();
-    }
+    cenario.pintar(grafico, getWidth(), getHeight());
   }
 }

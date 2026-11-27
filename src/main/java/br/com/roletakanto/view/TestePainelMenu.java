@@ -12,7 +12,7 @@ import javax.swing.SwingUtilities;
 import br.com.roletakanto.controller.ControladorPartida;
 import br.com.roletakanto.service.CatalogoJogo;
 
-/** Prévia independente do menu e da escolha do Pokémon inicial. */
+/** Entrada da campanha Swing, com menu, iniciais, rotas e combates na mesma janela. */
 public final class TestePainelMenu {
 
     private TestePainelMenu() {
@@ -24,24 +24,7 @@ public final class TestePainelMenu {
 
     private static void abrirPrevia() {
         NavegadorTelas navegador = new NavegadorTelas();
-        PainelMenu menu = new PainelMenu(() -> navegador.mostrar("inicial"));
-        PainelInicial inicial = new PainelInicial();
-        PainelRota rota = new PainelRota();
-        ControladorPartida controlador = new ControladorPartida();
-        CatalogoJogo catalogo = new CatalogoJogo();
-        var especies = catalogo.carregarEspecies();
-        inicial.exibirOpcoes(java.util.List.of(
-            especies.get("bulbasaur"),
-            especies.get("charmander"),
-            especies.get("squirtle")));
-        inicial.definirAcaoConfirmar(idInicial -> {
-            controlador.novaPartida(idInicial);
-            rota.conectar(controlador);
-            navegador.mostrar("rota");
-        });
-        navegador.registrar("menu", menu);
-        navegador.registrar("inicial", inicial);
-        navegador.registrar("rota", rota);
+        FluxoCampanha campanha = registrarTelas(navegador, new ControladorPartida());
 
         JFrame janela = new JFrame("Teste - Roleta Kanto");
         janela.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -49,10 +32,12 @@ public final class TestePainelMenu {
         janela.setContentPane(navegador);
         janela.getRootPane().registerKeyboardAction(evento -> {
             if ("rota".equals(navegador.getTelaAtual())) {
-                navegador.mostrar("inicial");
+                if (!campanha.rotaGirando()) {
+                    navegador.mostrar("inicial");
+                }
             } else if ("inicial".equals(navegador.getTelaAtual())) {
                 navegador.mostrar("menu");
-            } else {
+            } else if ("menu".equals(navegador.getTelaAtual())) {
                 janela.dispatchEvent(new WindowEvent(janela, WindowEvent.WINDOW_CLOSING));
             }
         }, KeyStroke.getKeyStroke("ESCAPE"), JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -75,5 +60,20 @@ public final class TestePainelMenu {
             }
         });
         monitor.setFullScreenWindow(janela);
+    }
+
+    static FluxoCampanha registrarTelas(NavegadorTelas navegador, ControladorPartida controlador) {
+        PainelMenu menu = new PainelMenu(() -> navegador.mostrar("inicial"));
+        PainelInicial inicial = new PainelInicial();
+        var especies = new CatalogoJogo().carregarEspecies();
+        inicial.exibirOpcoes(java.util.List.of(
+            especies.get("bulbasaur"),
+            especies.get("charmander"),
+            especies.get("squirtle")));
+        navegador.registrar("menu", menu);
+        navegador.registrar("inicial", inicial);
+        FluxoCampanha campanha = new FluxoCampanha(navegador, controlador);
+        inicial.definirAcaoConfirmar(campanha::iniciar);
+        return campanha;
     }
 }

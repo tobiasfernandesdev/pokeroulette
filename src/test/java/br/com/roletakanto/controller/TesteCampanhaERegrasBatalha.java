@@ -115,12 +115,11 @@ class TesteCampanhaERegrasBatalha {
         new ControladorPartida(
             catalogo,
             new RepositorioPartidaArquivo(pastaTemp.resolve("primeiro-ginasio.dat")),
-            new Random(0L));
+            new Random(159L)); // Super Poção e Oddish nos dois giros iniciais.
     campanha.novaPartida("charmander");
 
-    campanha.girarRoleta();
-    campanha.girarRoleta();
-    campanha.girarRoleta();
+    assertTrue(campanha.girarRoletaComResultado().sucesso());
+    assertTrue(campanha.girarRoletaComResultado().sucesso());
 
     var equipe = campanha.getPartida().getJogador().getEquipe();
     Pokemon oddish =

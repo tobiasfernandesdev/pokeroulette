@@ -275,6 +275,7 @@ public final class DesenhadorRoleta extends JComponent {
       case "super_pocao" -> "SUPER POÇÃO";
       case "reviver" -> "REVIVER";
       case "pokebola_dourada" -> "POKÉBOLA DOURADA";
+      case "cura_status" -> "CURA DE STATUS";
       default -> segmento.idConteudo().replace('_', ' ').toUpperCase();
     };
   }
