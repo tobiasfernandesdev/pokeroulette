@@ -12,6 +12,7 @@ final class FluxoCampanha {
   private final PainelEquipe equipe = new PainelEquipe();
   private final PainelBatalha batalha = new PainelBatalha();
   private final PainelResultado resultado = new PainelResultado();
+  private String nomeCandidato = "Jogador";
 
   FluxoCampanha(NavegadorTelas navegador, ControladorPartida controlador) {
     this.navegador = navegador;
@@ -31,8 +32,15 @@ final class FluxoCampanha {
     });
   }
 
+  void definirNomeCandidato(String nome) {
+    if (nome == null || nome.isBlank()) {
+      throw new IllegalArgumentException("O nome do candidato é obrigatório.");
+    }
+    nomeCandidato = nome.trim();
+  }
+
   void iniciar(String idInicial) {
-    controlador.novaPartida(idInicial);
+    controlador.novaPartida(idInicial, nomeCandidato);
     rota.conectar(controlador);
     navegador.mostrar("rota");
   }

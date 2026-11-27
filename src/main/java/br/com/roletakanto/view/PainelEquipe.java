@@ -72,7 +72,9 @@ public final class PainelEquipe extends JPanel {
   void apresentarPartida() {
     var partida = controlador.getPartida();
     boolean preparando = partida.getFase() == FasePartida.ORGANIZACAO;
-    titulo.setText(preparando ? "PREPARAÇÃO · " + partida.getLiderAtual().getNome() : "EQUIPE E RESERVA");
+    titulo.setText((preparando
+        ? "PREPARAÇÃO · " + partida.getLiderAtual().getNome()
+        : "EQUIPE E RESERVA") + " · " + partida.getJogador().getNome());
     voltar.setVisible(!preparando || partida.getRotaAtual().temGiroDisponivel());
     desafiar.setVisible(preparando);
     mensagem.setText("O primeiro Pokémon apto da equipe começa o combate.");
