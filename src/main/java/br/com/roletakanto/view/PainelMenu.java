@@ -94,7 +94,7 @@ public final class PainelMenu extends JPanel {
     controles.add(criarConfirmacao(), "confirmar");
     controles.add(criarAudio(), "audio");
     atualizarDisponibilidade(false);
-    fundo.posicionarControles(controles, 0.91);
+    fundo.posicionarControles(controles, 0.75);
     revalidate();
     repaint();
   }
